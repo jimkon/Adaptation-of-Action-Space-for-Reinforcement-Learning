@@ -23,26 +23,41 @@ class Space:
         self.__space = init_uniform_space(np.zeros(self._dimensions),
                                           np.ones(self._dimensions),
                                           points)
+        self.__actions_score = np.zeros(self.__space.shape)
         self._flann = pyflann.FLANN()
         self.rebuild_flann()
 
     def rebuild_flann(self):
         self._index = self._flann.build_index(self.__space, algorithm='kdtree')
 
+    def update(self):
+        new_actions = self.new_actions()
+        self.__space = np.reshape(new_actions, (len(new_actions), self._dimensions))
+        self.__actions_score = np.zeros(self.__space.shape)
+        self.rebuild_flann()
+
+    def new_actions(self):
+        return self.__space[np.where(self.__actions_score > 0)]
+
     def search_point(self, point, k):
-        p_in = self.import_point(point)
-        search_res, _ = self._flann.nn_index(p_in, k)
-        knns = self.__space[search_res]
+        p_in = self._import_point(point)
+        indexes, _ = self._flann.nn_index(p_in, k)
+        knns = self.__space[indexes]
         p_out = []
         for p in knns:
-            p_out.append(self.export_point(p))
+            p_out.append(self._export_point(p))
 
-        return np.array(p_out)
+        return np.array(p_out), indexes
 
-    def import_point(self, point):
+    def feedback(self, action, reward):
+        # action used and got reward
+        _, index = self.search_point(action, 1)
+        self.__actions_score[index] += 1
+
+    def _import_point(self, point):
         return (point - self._low) / self._range
 
-    def export_point(self, point):
+    def _export_point(self, point):
         return self._low + point * self._range
 
     def get_space(self):
@@ -53,6 +68,17 @@ class Space:
 
     def get_number_of_actions(self):
         return self.shape()[0]
+
+    def plot_usage(self):
+        lines = []
+        count = self.__actions_score
+        x = self.get_space()
+
+        lines.append(mplt.Line(x, count))
+        for i in x:
+            lines.append(mplt.Line([i, i], [-.1, -.4], line_color='#000000'))
+
+        mplt.plot_lines(lines)
 
     def plot_space(self, additional_points=None):
 
@@ -97,6 +123,3 @@ def init_uniform_space(low, high, points):
         space.append(list(_))
 
     return np.array(space)
-
-
-Space([-1, -2, -3], [1, 2, 3], 100)
