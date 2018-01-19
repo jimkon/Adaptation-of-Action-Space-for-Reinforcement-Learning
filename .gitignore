@@ -11,6 +11,7 @@ __pycache__
 clipboard.py
 example.py
 pyflann_timing.py
+action_space_clipboard.py
 
 # .pyc files
 *.pyc
