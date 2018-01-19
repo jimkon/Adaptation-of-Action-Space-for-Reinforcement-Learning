@@ -20,8 +20,8 @@ class Space:
         self._high = np.array(high)
         self._range = self._high - self._low
         self._dimensions = len(low)
-        self.__space = init_uniform_space([0] * self._dimensions,
-                                          [1] * self._dimensions,
+        self.__space = init_uniform_space(np.zeros(self._dimensions),
+                                          np.ones(self._dimensions),
                                           points)
         self._flann = pyflann.FLANN()
         self.rebuild_flann()
@@ -97,3 +97,6 @@ def init_uniform_space(low, high, points):
         space.append(list(_))
 
     return np.array(space)
+
+
+Space([-1, -2, -3], [1, 2, 3], 100)
