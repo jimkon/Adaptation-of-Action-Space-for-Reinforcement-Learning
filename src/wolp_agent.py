@@ -7,13 +7,12 @@ import action_space
 
 class WolpertingerAgent(agent.DDPGAgent):
 
-    def __init__(self, env, max_actions=1e6, k_ratio=0.1):
+    def __init__(self, env, max_actions=1e5, k_ratio=0.1):
         super().__init__(env)
         self.experiment = env.spec.id
         if self.continious_action_space:
             self.action_space = action_space.Space(self.low, self.high, max_actions)
         else:
-            #
             print('This version works only for continuous action space')
             exit()
 
@@ -35,9 +34,17 @@ class WolpertingerAgent(agent.DDPGAgent):
         # return the best neighbor of the proto action
         return self.wolp_action(state, proto_action)
 
+    def observe(self, episode):
+        # episode['obs'] = self._np_shaping(episode['obs'], True)
+        # episode['action'] = self._np_shaping(episode['action'], False)
+        # episode['obs2'] = self._np_shaping(episode['obs2'], True)
+        # self.add_experience(episode)
+        super().observe(episode)
+        # update action space for the action
+
     def wolp_action(self, state, proto_action):
         # get the proto_action's k nearest neighbors
-        actions = self.action_space.search_point(proto_action, self.k_nearest_neighbors)[0]
+        actions, indexes = self.action_space.search_point(proto_action, self.k_nearest_neighbors)[0]
         # make all the state, action pairs for the critic
         states = np.tile(state, [len(actions), 1])
         # evaluate each pair through the critic
