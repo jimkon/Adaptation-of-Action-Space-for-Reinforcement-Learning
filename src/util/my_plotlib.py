@@ -6,7 +6,7 @@ from random import randint
 
 
 class Line:
-    def __init__(self, x, y, line_width=1, line_color=None, text='', style='-',
+    def __init__(self, x, y, line_width=1, line_color=None, text=None, style='-',
                  axis_labels={'y': 'y', 'x': 'x'}):
         self.x = x
         self.y = y
@@ -23,7 +23,7 @@ class Line:
         self.text = text
         self.style = style
 
-    def plot(self, fig=None, text_y=1, log=False, title=''):
+    def plot(self, fig=None, text_y=1, log=False, title='', labels=True):
         if fig is None:
             plt.figure()
             plt.grid(True)
@@ -43,7 +43,9 @@ class Line:
         # plt.text(self.x[0], text_y,
         #          self.text, color=self.color)
 
-        plt.legend()
+        if labels:
+            plt.legend()
+
         if log:
             plt.yscale('log')
 
@@ -70,7 +72,7 @@ class Constant(Line):
 
 
 def plot_lines(lines, seps=None, grid_flag=True, log=False, title='',
-               axis_labels={'y': 'y', 'x': 'x'}):
+               axis_labels={'y': 'y', 'x': 'x'}, labels=True):
     fig = plt.figure()
     plt.grid(grid_flag)
     plt.title(title)
@@ -89,7 +91,7 @@ def plot_lines(lines, seps=None, grid_flag=True, log=False, title='',
     count = 1
     y_range = max_y - min_y
     for line in lines:
-        line.plot(fig=fig, text_y=0.5 * y_range * count / len(lines))
+        line.plot(fig=fig, text_y=0.5 * y_range * count / len(lines), labels=labels)
         count += 1
 
     if log:
