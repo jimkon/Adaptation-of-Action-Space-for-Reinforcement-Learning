@@ -4,6 +4,7 @@ import pyflann
 
 import util.my_plotlib as mplt
 from util.data_graph import plot_3d_points
+import action_space_evolution as ev
 
 
 """
@@ -23,15 +24,20 @@ class Space:
         self.__space = init_uniform_space(np.zeros(self._dimensions),
                                           np.ones(self._dimensions),
                                           points)
+        print('new actions space shape:', self.__space.shape)
         self.__actions_score = np.zeros(self.__space.shape)
+        # self.__actions_evolution = ev.Action_space_evolution()
+        self._actions_evolution = ev.Genetic_Algorithm()
         self._flann = pyflann.FLANN()
         self.rebuild_flann()
 
     def rebuild_flann(self):
-        self._index = self._flann.build_index(self.__space, algorithm='kdtree')
+        self._index = self._flann.build_index(np.copy(self.__space), algorithm='kdtree')
 
     def update(self):
-        new_actions = self.new_actions()
+        self._actions_evolution.update_population(self.__space, self.__actions_score)
+        new_actions = self._actions_evolution.get_next_generation()
+        print('new actions space shape:', new_actions.shape)
         self.__space = np.reshape(new_actions, (len(new_actions), self._dimensions))
         self.__actions_score = np.zeros(self.__space.shape)
         self.rebuild_flann()
@@ -78,7 +84,7 @@ class Space:
         for i in x:
             lines.append(mplt.Line([i, i], [-.1, -.4], line_color='#000000'))
 
-        mplt.plot_lines(lines)
+        mplt.plot_lines(lines, labels=False)
 
     def plot_space(self, additional_points=None):
 
@@ -99,13 +105,13 @@ class Space:
             for x in space:
                 lines.append(mplt.Line([x], [0], line_color='o'))
 
-            mplt.plot_lines(lines)
+            mplt.plot_lines(lines, labels=False)
         elif dims == 2:
             lines = []
             for x, y in space:
                 lines.append(mplt.Line([x], [y], line_color='o'))
 
-            mplt.plot_lines(lines)
+            mplt.plot_lines(lines, labels=False)
         else:
             plot_3d_points(space)
 
