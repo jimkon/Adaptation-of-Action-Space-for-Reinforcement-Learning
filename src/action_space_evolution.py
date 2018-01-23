@@ -15,17 +15,17 @@ class Action_space_evolution:
 
 class Genetic_Algorithm(Action_space_evolution):
 
+    """
+    alive/total percentage must be adjustable.
+    offsprings/alive percentage must be adjustable.
+    next_gen/prev_gen percentage must be adjustable.
+    """
+
     def selection(self, population):
-        # normalized_scores = np.copy(self._scores) / np.sum(self._scores)
         normalized_scores = self.normalize_scores(self._scores)
-        # print('normalized_scores\n', normalized_scores)
         probs = uniform(size=normalized_scores.shape)
-        # print('probs\n', probs)
         index_of_alive = np.where(normalized_scores >= probs)[0]
-        # print('index_of_alive\n', index_of_alive)
         alive = population[index_of_alive]
-        # print('alive\n', alive)
-        # exit()
         return alive
 
     def crossover(self, population):
