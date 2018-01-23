@@ -55,10 +55,9 @@ class Space:
 
         return np.array(p_out), indexes
 
-    def feedback(self, action, reward):
-        # action used and got reward
-        _, index = self.search_point(action, 1)
-        self.__actions_score[index] += 1
+    def feedback(self, actions_index, reward, actors_action):
+        # action selected for actors action and got reward
+        self.__actions_score[actions_index] += 1
 
     def _import_point(self, point):
         return (point - self._low) / self._range
