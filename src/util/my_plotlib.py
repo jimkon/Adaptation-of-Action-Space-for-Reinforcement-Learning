@@ -7,11 +7,12 @@ from random import randint
 
 class Line:
     def __init__(self, x, y, line_width=1, line_color=None, text=None, style='-',
-                 axis_labels={'y': 'y', 'x': 'x'}):
+                 axis_labels={'y': 'y', 'x': 'x'}, marker=None):
         self.x = x
         self.y = y
         self.width = line_width
         self.axis_labels = axis_labels
+        self.marker = marker
 
         if line_color is None:
 
@@ -38,8 +39,10 @@ class Line:
                  self.y,
                  self.color,
                  linewidth=self.width,
+                 markersize=self.width * 3,
                  linestyle=self.style,
-                 label=self.text)
+                 label=self.text,
+                 marker=self.marker)
         # plt.text(self.x[0], text_y,
         #          self.text, color=self.color)
 
@@ -54,6 +57,12 @@ class Line:
 
     def y_range(self):
         return np.amin(self.y), np.amax(self.y)
+
+
+class Point(Line):
+
+    def __init__(self, x, y, line_width=1, line_color=None, text='', marker='.'):
+        super().__init__(x, y, line_width, line_color, text, marker=marker)
 
 
 class Function(Line):
