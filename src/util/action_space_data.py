@@ -24,6 +24,87 @@ def plot_lenghts(mon):
     plot_lines(lines)
 
 
+def plot_space_across_episodes(mon):
+    lines = []
+    print('processing data')
+    spaces = mon.break_into_episodes('space')
+    scores = np.array(mon.break_into_episodes('usage'))
+    max_scores = []
+    for s in scores:
+        if len(s) > 0:
+            max_scores.append(np.max(s))
+        else:
+            max_scores.append(-1)
+
+    episodes = len(spaces)
+    print('start plotting data')
+    x = np.arange(episodes)
+    for i in x:
+        space = spaces[i]
+        for j in range(len(space)):
+            f = scores[i][j] / max_scores[i]
+            color = '#{:02x}0000'.format(int(255 * f))
+            lines.append(Line([i, i + 1], [space[j], space[j]],
+                              line_color=color, line_width=1 + f))
+
+    plot_lines(lines, labels=False)
+
+
+def plot_actors_actions_across_episodes(mon):
+    lines = []
+    print('processing data')
+    actions = mon.break_into_episodes('actors_action')
+
+    episodes = len(actions)
+    print('start plotting data')
+    x = np.arange(episodes)
+    for i in x:
+        ep = actions[i]
+        for j in range(len(ep)):
+            # f = scores[i][j] / max_scores[i]
+            # color = '#{:02x}0000'.format(int(255 * f))
+            lines.append(Line([i, i + 1], [ep[j], ep[j]],
+                              line_color='#00ff00', line_width=1))
+
+    plot_lines(lines, labels=False)
+
+
+def plot_space_and_actions_across_episodes(mon):
+    lines = []
+    print('processing data')
+    spaces = mon.break_into_episodes('space')
+    scores = np.array(mon.break_into_episodes('usage'))
+    actions = mon.break_into_episodes('actors_action')
+    max_scores = []
+    for s in scores:
+        if len(s) > 0:
+            max_scores.append(np.max(s))
+        else:
+            max_scores.append(-1)
+
+    episodes = len(spaces)
+    print('start plotting data')
+    x = np.arange(episodes)
+    # plotting actions
+    for i in x:
+        ep = actions[i]
+        for j in range(len(ep)):
+            # f = scores[i][j] / max_scores[i]
+            # color = '#{:02x}0000'.format(int(255 * f))
+            lines.append(Line([i, i + 1], [ep[j], ep[j]],
+                              line_color='#00ff00', line_width=1))
+    # plotting spaces
+    for i in x:
+        space = spaces[i]
+        for j in range(len(space)):
+            f = .3 + scores[i][j] / max_scores[i]
+            color = '#{:02x}0000'.format(int(255 * f))
+            lines.append(Line([i, i + 1], [space[j], space[j]],
+                              line_color=color, line_width=f))
+
+    plot_lines(lines, labels=False)
+
+
 class Action_space_data(Data):
 
     def break_into_episodes(self, field):
@@ -57,4 +138,9 @@ if __name__ == '__main__':
     monitor.load()
     monitor.print_data()
 
-    plot_lenghts(monitor)
+    # plot_lenghts(monitor)
+    # plot_space_across_episodes(monitor)
+    # plot_actors_actions_across_episodes(monitor)
+    plot_space_and_actions_across_episodes(monitor)
+
+    # print(monitor.break_into_episodes('space'))

@@ -51,7 +51,8 @@ class ParticleFilter(Action_space_evolution):
                     [f_util] * len(valid_factors))))]
 
         result = int(math.ceil(factor * len(self._population)))
-        return max(min(result, self._upper_limit), self._lower_limit)
+        # return max(min(result, self._upper_limit), self._lower_limit)
+        return result
 
     def _get_distribution(self):
         n = len(self._scores)
@@ -74,7 +75,7 @@ class ParticleFilter(Action_space_evolution):
         temp = np.copy(self._scores)
         next_gens_size = self._calculate_next_gens_size()
         next_gen = self._sample_new_particles(next_gens_size)
-        # next_gen = np.sort(next_gen)
+        next_gen = np.sort(next_gen, axis=0)
         return next_gen
 
         # not fully implemented

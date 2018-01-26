@@ -34,9 +34,7 @@ class Space:
         self.rebuild_flann()
 
         self.monitor = monitor
-        self.monitor.add_arrays(['space', 'usage', 'lenght'])
-        self.monitor.add_to_array('space', self.__space)
-        self.monitor.add_to_array('lenght', len(self.__space))
+        self.monitor.add_arrays(['space', 'usage', 'lenght', 'actors_action'])
 
     def rebuild_flann(self):
         self._index = self._flann.build_index(np.copy(self.__space), algorithm='kdtree')
@@ -44,12 +42,12 @@ class Space:
     def update(self):
         self._flann.delete_index()
         self.monitor.add_to_array('usage', self.__actions_score)
+        self.monitor.add_to_array('space', self.__space)
+        self.monitor.add_to_array('lenght', len(self.__space))
         self._actions_evolution.update_population(self.__space, self.__actions_score)
 
         new_actions = self._actions_evolution.get_next_generation()
         self.__space = np.reshape(new_actions, (len(new_actions), self._dimensions))
-        self.monitor.add_to_array('space', self.__space)
-        self.monitor.add_to_array('lenght', len(self.__space))
 
         self.__actions_score = np.zeros(self.__space.shape[0])
         self.rebuild_flann()
@@ -70,6 +68,7 @@ class Space:
     def feedback(self, actions_index, reward, actors_action):
         # action selected for actors action and got reward
         self.__actions_score[actions_index] += 1
+        self.monitor.add_to_array('actors_action', self._import_point(actors_action))
 
     def _import_point(self, point):
         return (point - self._low) / self._range
@@ -91,9 +90,9 @@ class Space:
         count = self.__actions_score
         x = self.get_space()
 
-        lines.append(mplt.Line(x, count))
-        for i in x:
-            lines.append(mplt.Line([i, i], [-.1, -.4], line_color='#000000'))
+        # lines.append(mplt.Line(x, count, line_color="b"))
+        for i in range(len(x)):
+            lines.append(mplt.Line([x[i], x[i]], [-.1, count[i]], line_color='#000000'))
 
         mplt.plot_lines(lines, labels=False)
 
