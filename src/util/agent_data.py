@@ -32,23 +32,40 @@ def plot_average_reward(fd):
     rewards = fd.get_data('rewards')
     batch_size = max(1, int(len(rewards) / 100))
     batches = data_graph.break_into_batches(rewards, batch_size)
-    sum = 0
+    adaption_episode = fd.get_adaption_episode()
+
+    total = 0
     avg = []
     count = 0
+
+    total_adaption_ignored = 0
+    avg_adaption_ignored = []
+    count_adaption_ignored = 0
+
     for batch in batches:
-        sum += np.sum(batch)
-        count += batch_size
-        avg.append(sum / count)
+        batch_sum = np.sum(batch)
+        total += batch_sum
+        count += len(batch)
+        avg.append(total / count)
+        if adaption_episode > 0:
+            if count > adaption_episode:
+                total_adaption_ignored += batch_sum
+                count_adaption_ignored += batch_size
+                avg_adaption_ignored.append(total_adaption_ignored / count_adaption_ignored)
 
     x = np.arange(len(avg)) * batch_size
     lines = [Line(x, avg, text='avg=' + str(avg[len(avg) - 1]), line_color='m')]
 
-    adaption_episode = fd.get_adaption_episode()
+    if adaption_episode > 0:
+        x_adt = adaption_episode + np.arange(len(avg_adaption_ignored)) * batch_size
+        lines.append(Line(x_adt, avg_adaption_ignored,
+                          text='avg(ignore adaption)=' + str(avg_adaption_ignored[len(avg_adaption_ignored) - 1]), line_color='r'))
+
     # fit in x axis
-    adaption_episode = int(round(adaption_episode / batch_size) * batch_size)
-    lines.append(Line(adaption_episode,
-                      avg[int(round(adaption_episode / batch_size))],
-                      line_color='o',
+    # adaption_episode = int(round(adaption_episode / batch_size) * batch_size)
+    lines.append(Line([adaption_episode, adaption_episode],
+                      [0, avg_adaption_ignored[0]],
+                      line_color='b--',
                       text='adaption time={} steps({} episodes)'.format(
                           fd.get_adaption_time(), adaption_episode)))
 
@@ -68,7 +85,7 @@ def plot_actions(fd, episodes=None, action_space_flag=False):
             data.extend(fd.get_episode_data('actions', ep))
             seps.append(len(data) - 0.5)
 
-    if len(seps) == 1:
+    if len(seps) == 1 or len(seps) > 1000:
         seps = []
     x = np.arange(len(data))
     if action_space_flag:
@@ -91,6 +108,36 @@ def plot_actions(fd, episodes=None, action_space_flag=False):
                axis_labels={'y': 'action space', 'x': 'steps'})
 
 
+def plot_actions_error(fd):
+    lines = []
+
+    actions = fd.get_data('actions')
+    cont_actions = fd.get_data('actors_result')
+    result = np.abs(actions - cont_actions)
+
+    batch_size = max(1, int(len(result) / 50))
+    batches = data_graph.break_into_batches(result, batch_size)
+    avg = []
+    total = 0
+    count = 0
+    for batch in batches:
+        total = np.sum(batch)
+        count = len(batch)
+        avg.append(total / count)
+    x = np.arange(len(avg)) * batch_size
+    lines.append(Line(x, avg, text='average', line_color='b'))
+
+    adt = fd.get_adaption_time()
+    if adt > 0:
+        adt = int(round(adt / batch_size) * batch_size)
+        lines.append(Line(adt,
+                          avg[int(round(adt / batch_size))],
+                          line_color='o',
+                          text='adaption time'))
+
+    plot_lines(lines)
+
+
 def plot_action_distribution(fd, batches=-1):
     lines = []
 
@@ -102,7 +149,6 @@ def plot_action_distribution(fd, batches=-1):
     eps = [int(item) for item in np.linspace(0, number_of_episodes, batches)]
     colors = np.linspace(0xbbbb11, 0x000011, batches - 1)
     action_space_length = len(fd.get_data('action_space'))
-    # color = 0xaaaaaa
     for i in range(batches - 1):
         print('Batch', i, '-', i + 1)
         episodes = np.arange(eps[i], eps[i + 1])
@@ -111,7 +157,7 @@ def plot_action_distribution(fd, batches=-1):
         min_action = np.amin(data)
         max_action = np.amax(data)
 
-        y, x = np.histogram(data, bins=int(action_space_length * .1), density=False)
+        y, x = np.histogram(data, bins=math.ceil(action_space_length * .1), density=False)
         # y, x = np.histogram(data, bins=6, density=True)
 
         x = np.linspace(min_action, max_action, len(y))
@@ -146,6 +192,8 @@ def plot_actions_statistics(fd):
     sum_probs = [0.8, 0.9, 0.99]
     for p in sum_probs:
         x_p = np.where(sum_y < p)[0]
+        if len(x_p) < 1:
+            continue
         x_p = x_p[len(x_p) - 1] + 1
         lines.append(Line(x_p, p, line_color='o',
                           text='{} ({} actions)'.format(p, x_p)))
@@ -283,13 +331,19 @@ class Agent_data(Data):
     def get_number_of_episodes(self):
         return len(self.get_data('rewards'))
 
-    def get_adaption_episode(self, reward_threshold=10):
+    # searches for the first window with average greater than the threshold
+    def get_adaption_episode(self, reward_threshold=10, window=20):
         rewards = self.get_data('rewards')
         total = 0
-        for i in range(len(rewards)):
-            total += rewards[i]
-            if total / (i + 1) > reward_threshold:
-                return i
+        if len(rewards) > window:
+            total = np.sum(rewards[:window])
+
+        i = 0
+        while i < len(rewards) - window and total / window <= reward_threshold:
+            total += rewards[i + window - 1] - rewards[i]
+            i += 1
+
+        return i
 
     def get_adaption_time(self, reward_threshold=50):
         first_increase = self.get_adaption_episode(reward_threshold)
