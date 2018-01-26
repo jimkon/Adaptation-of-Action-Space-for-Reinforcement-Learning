@@ -7,7 +7,7 @@ import action_space
 
 class WolpertingerAgent(agent.DDPGAgent):
 
-    def __init__(self, env, max_actions=1e5, k_ratio=0.1):
+    def __init__(self, env, max_actions=1e5, k_ratio=0.1, action_space_monitor=None):
         super().__init__(env)
         self.experiment = env.spec.id
         if self.continious_action_space:

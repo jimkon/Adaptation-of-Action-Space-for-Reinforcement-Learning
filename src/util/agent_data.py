@@ -59,6 +59,7 @@ def plot_average_reward(fd):
     if adaption_episode > 0:
         x_adt = adaption_episode + np.arange(len(avg_adaption_ignored)) * batch_size
         lines.append(Line(x_adt, avg_adaption_ignored,
+
                           text='avg(ignore adaption)=' + str(avg_adaption_ignored[len(avg_adaption_ignored) - 1]), line_color='r'))
 
     # fit in x axis
@@ -335,6 +336,7 @@ class Agent_data(Data):
     def get_adaption_episode(self, reward_threshold=10, window=20):
         rewards = self.get_data('rewards')
         total = 0
+
         if len(rewards) > window:
             total = np.sum(rewards[:window])
 
@@ -344,6 +346,7 @@ class Agent_data(Data):
             i += 1
 
         return i
+
 
     def get_adaption_time(self, reward_threshold=50):
         first_increase = self.get_adaption_episode(reward_threshold)

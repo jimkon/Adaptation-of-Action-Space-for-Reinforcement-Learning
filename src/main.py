@@ -26,11 +26,15 @@ def run(episodes=2500,
 
     steps = env.spec.timestep_limit
 
+    action_space_monitor = Data("action_space_" + str(episodes) + '_' + len(max_actions))
+
     # agent = DDPGAgent(env)
-    agent = WolpertingerAgent(env, max_actions=max_actions, k_ratio=knn)
+    agent = WolpertingerAgent(env, max_actions=max_actions, k_ratio=knn,
+                              action_space_monitor=action_space_monitor)
 
     file_name = "data_" + str(episodes) + '_' + agent.get_name()
     print(file_name)
+
     data_fetcher = Data(file_name)
 
     data_fetcher.add_arrays(['experiment', 'max_actions', 'action_space',
@@ -93,6 +97,7 @@ def run(episodes=2500,
 
                 if ep % AUTO_SAVE_AFTER_EPISODES == AUTO_SAVE_AFTER_EPISODES - 1:
                     data_fetcher.temp_save()
+                    action_space_monitor.temp_save()
 
                 break
     # end of episodes
@@ -101,6 +106,7 @@ def run(episodes=2500,
         episodes, time / 1000, reward_sum / episodes))
 
     data_fetcher.save()
+    action_space_monitor.save()
 
 
 if __name__ == '__main__':

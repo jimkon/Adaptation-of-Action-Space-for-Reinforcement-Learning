@@ -16,30 +16,42 @@ import action_space_evolution as ev
 
 class Space:
 
-    def __init__(self, low, high, points):
+    def __init__(self, low, high, points, monitor):
         self._low = np.array(low)
         self._high = np.array(high)
         self._range = self._high - self._low
         self._dimensions = len(low)
+
         self.__space = init_uniform_space(np.zeros(self._dimensions),
                                           np.ones(self._dimensions),
                                           points)
-        print('new actions space shape:', self.__space.shape)
-        self.__actions_score = np.zeros(self.__space.shape)
+        self.__actions_score = np.zeros(self.__space.shape[0])
         # self.__actions_evolution = ev.Action_space_evolution()
-        self._actions_evolution = ev.Genetic_Algorithm()
+        # self._actions_evolution = ev.Genetic_Algorithm()
+        self._actions_evolution = ev.ParticleFilter(points * 2)
+
         self._flann = pyflann.FLANN()
         self.rebuild_flann()
+
+        self.monitor = monitor
+        self.monitor.add_arrays(['space', 'usage', 'lenght'])
+        self.monitor.add_to_array('space', self.__space)
+        self.monitor.add_to_array('lenght', len(self.__space))
 
     def rebuild_flann(self):
         self._index = self._flann.build_index(np.copy(self.__space), algorithm='kdtree')
 
     def update(self):
+        self._flann.delete_index()
+        self.monitor.add_to_array('usage', self.__actions_score)
         self._actions_evolution.update_population(self.__space, self.__actions_score)
+
         new_actions = self._actions_evolution.get_next_generation()
-        print('new actions space shape:', new_actions.shape)
         self.__space = np.reshape(new_actions, (len(new_actions), self._dimensions))
-        self.__actions_score = np.zeros(self.__space.shape)
+        self.monitor.add_to_array('space', self.__space)
+        self.monitor.add_to_array('lenght', len(self.__space))
+
+        self.__actions_score = np.zeros(self.__space.shape[0])
         self.rebuild_flann()
 
     def new_actions(self):
