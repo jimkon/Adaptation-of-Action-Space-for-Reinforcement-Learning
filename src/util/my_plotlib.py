@@ -42,7 +42,6 @@ class Line:
                  self.color,
                  linewidth=self.width,
                  markersize=self.width * 3,
-                 linestyle=self.style,
                  label=self.text,
                  marker=self.marker)
         # plt.text(self.x[0], text_y,
