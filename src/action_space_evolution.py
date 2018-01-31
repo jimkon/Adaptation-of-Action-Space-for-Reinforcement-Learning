@@ -2,6 +2,8 @@ import numpy as np
 from numpy.random import uniform
 import math
 
+import util.my_plotlib as mplt
+
 
 def temp_plot(d1, d2):
     import matplotlib.pyplot as plt
@@ -30,7 +32,10 @@ class ParticleFilter(Action_space_evolution):
     def __init__(self, max_actions):
         self._upper_limit = int(max_actions)
         self._lower_limit = int(max_actions * self.MIN_POPULATION)
-        self._sigma = 1 / max_actions  # ????
+
+    def update_population(self, population, scores):
+        super().update_population(population, scores)
+        self._sigma = 1 / len(self._population)  # ????
 
     def _utility_factor(self):
         n_prev = len(self._population)
@@ -64,12 +69,19 @@ class ParticleFilter(Action_space_evolution):
 
     def _sample_new_particles(self, n):
         distribution = self._get_distribution()
+
         samples = np.random.choice(len(self._population),
                                    size=n,
                                    p=distribution)
         new_particles = self._population[samples]
-        noise = np.random.standard_exponential(new_particles.shape) * self._sigma
-        return new_particles + noise
+        noise = np.random.standard_normal(new_particles.shape) * self._sigma
+        result = new_particles + noise
+        lines = [mplt.Line(self._population, distribution, line_color='#000000', text='distr')]
+        for i in range(len(new_particles)):
+            lines.append(mplt.Line([new_particles[i], result[i]],
+                                   [-.1, 0], line_color='#0000ff', marker='.'))
+        mplt.plot_lines(lines)
+        return result
 
     def get_next_generation(self):
         temp = np.copy(self._scores)
