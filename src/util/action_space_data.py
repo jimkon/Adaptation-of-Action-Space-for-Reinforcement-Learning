@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import numpy as np
 from my_plotlib import *
+import matplotlib.pyplot as plt
 from data import *
 import math
 import data_graph
@@ -21,7 +22,43 @@ def plot_lenghts(mon):
     lines.append(Line(x, lenghts, line_color='r', text='Population'))
     lines.append(Line(x, scores, line_color='g', text='total score/episode'))
 
+    plot_space_adaption(monitor, 1)
     plot_lines(lines)
+
+
+def plot_space_adaption_history(mon):
+    lenghts = mon.get_data('lenght')
+
+    for i in range(1, len(lenghts)):
+        plot_space_adaption(mon, i)
+
+
+def plot_space_adaption(mon, ep):
+    ep = max(ep, 1)
+    space = mon.break_into_episodes('space')[ep - 1:ep + 1]
+    actions = mon.break_into_episodes('actors_action')[ep - 1:ep + 1]
+    score = mon.break_into_episodes('usage')[ep - 1:ep + 1]
+    total_actions = [len(actions[0]), len(actions[1])]
+    score = score[0] / total_actions[0]
+
+    max_height = np.max(score)
+
+    for i in range(len(space[0])):
+        plt.plot([space[0][i], space[0][i]], [0, score[i]], 'b')
+
+    plt.plot(space[0], -.05 * max_height * np.ones(len(space[0])), 'b1',
+             label='{} actions ep={} ({} steps)'.format(
+             len(space[0]), ep - 1, int(total_actions[0])))
+    plt.plot(actions[0], -.1 * max_height * np.ones(len(actions[0])), 'g2',
+             label='{} actions ep={} '.format(
+             int(len(actions[0])), ep - 1))
+    plt.plot(space[1], -.15 * max_height * np.ones(len(space[1])), 'r2',
+             label='{} actions ep={} ({} steps)'.format(
+             len(space[1]), ep, int(total_actions[1])))
+
+    plt.grid()
+    plt.legend()
+    plt.show()
 
 
 def plot_space_across_episodes(mon):
@@ -93,16 +130,16 @@ def plot_space_and_actions_across_episodes(mon):
             # f = scores[i][j] / max_scores[i]
             # color = '#{:02x}0000'.format(int(255 * f))
             lines.append(Point(i, ep[j],
-                               line_color='#00ff00'))
+                               line_color='#00ff00', marker='1'))
     # plotting spaces
     for i in x:
         space = spaces[i]
         for j in range(len(space)):
             f = scores[i][j] / max_scores[i]
-            color = '#{:02x}0000'.format(int(255 * f * f))
+            color = '#{:02x}0000'.format(int(255 * (f ** 3)))
             f += .7
             lines.append(Point(i, space[j],
-                               line_color=color, line_width=f))
+                               line_color=color, line_width=f, marker='1'))
 
     plot_lines(lines, labels=False)
 
@@ -112,6 +149,11 @@ class Action_space_data(Data):
     def break_into_episodes(self, field):
         data = self.get_data(field)
         lenghts = self.get_data('lenght')
+        if field == 'actors_action':
+            usage = self.break_into_episodes('usage')
+            lenghts = []
+            for ep in usage:
+                lenghts.append(np.sum(ep))
 
         batches = []
         count = 0
@@ -140,6 +182,7 @@ if __name__ == '__main__':
     monitor.load()
     monitor.print_data()
 
+    # plot_space_adaption_history(monitor)
     # plot_lenghts(monitor)
     # plot_space_across_episodes(monitor)
     # plot_actors_actions_across_episodes(monitor)

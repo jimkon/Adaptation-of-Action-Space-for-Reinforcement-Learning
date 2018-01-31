@@ -6,7 +6,7 @@ from random import randint
 
 
 class Line:
-    def __init__(self, x, y, line_width=1, line_color=None, text=None, style='-',
+    def __init__(self, x, y, line_width=1, line_color=None, text=None, style='',
                  axis_labels={'y': 'y', 'x': 'x'}, marker=None):
         if x is None:
             x = np.arange(len(y))
