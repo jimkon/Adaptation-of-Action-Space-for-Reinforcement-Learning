@@ -28,7 +28,7 @@ class Space:
         self.__actions_score = np.zeros(self.__space.shape[0])
         # self.__actions_evolution = ev.Action_space_evolution()
         # self._actions_evolution = ev.Genetic_Algorithm()
-        self._actions_evolution = ev.ParticleFilter(points * 2)
+        self._actions_evolution = ev.ParticleFilter(self.__space, points * 2)
 
         self._flann = pyflann.FLANN()
         self.rebuild_flann()
@@ -44,9 +44,8 @@ class Space:
         self.monitor.add_to_array('usage', self.__actions_score)
         self.monitor.add_to_array('space', self.__space)
         self.monitor.add_to_array('lenght', len(self.__space))
-        self._actions_evolution.update_population(self.__space, self.__actions_score)
 
-        new_actions = self._actions_evolution.get_next_generation()
+        new_actions = self._actions_evolution.get_next_generation(self.__actions_score)
         self.__space = np.reshape(new_actions, (len(new_actions), self._dimensions))
 
         self.__actions_score = np.zeros(self.__space.shape[0])
@@ -63,9 +62,10 @@ class Space:
         for p in knns:
             p_out.append(self._export_point(p))
 
-        return np.array(p_out), indexes
+        return np.array(p_out)[0], indexes[0]
 
-    def feedback(self, actions_index, reward, actors_action):
+    # remove proto action
+    def action_selected(self, actions_index, actors_action):
         # action selected for actors action and got reward
         self.__actions_score[actions_index] += 1
         self.monitor.add_to_array('actors_action', self._import_point(actors_action))

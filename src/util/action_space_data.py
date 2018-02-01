@@ -21,8 +21,10 @@ def plot_lenghts(mon):
 
     lines.append(Line(x, lenghts, line_color='r', text='Population'))
     lines.append(Line(x, scores, line_color='g', text='total score/episode'))
-
-    plot_space_adaption(monitor, 1)
+    lines.append(Line(x, mon.get_number_of_unique_actions_used(),
+                      line_color='b', text='unique actions/episode'))
+#
+    # plot_space_adaption(monitor, 1)
     plot_lines(lines)
 
 
@@ -39,6 +41,7 @@ def plot_space_adaption(mon, ep):
     actions = mon.break_into_episodes('actors_action')[ep - 1:ep + 1]
     score = mon.break_into_episodes('usage')[ep - 1:ep + 1]
     total_actions = [len(actions[0]), len(actions[1])]
+
     score = score[0] / total_actions[0]
 
     max_height = np.max(score)
@@ -59,52 +62,6 @@ def plot_space_adaption(mon, ep):
     plt.grid()
     plt.legend()
     plt.show()
-
-
-def plot_space_across_episodes(mon):
-    lines = []
-    print('processing data')
-    spaces = mon.break_into_episodes('space')
-    scores = np.array(mon.break_into_episodes('usage'))
-    max_scores = []
-    for s in scores:
-        if len(s) > 0:
-            max_scores.append(np.max(s))
-        else:
-            max_scores.append(-1)
-
-    episodes = len(spaces)
-    print('start plotting data')
-    x = np.arange(episodes)
-    for i in x:
-        space = spaces[i]
-        for j in range(len(space)):
-            f = scores[i][j] / max_scores[i]
-            color = '#{:02x}0000'.format(int(255 * f * f))
-            f += .7
-            lines.append(Point(i, space[j],
-                               line_color=color, line_width=f))
-
-    plot_lines(lines, labels=False)
-
-
-def plot_actors_actions_across_episodes(mon):
-    lines = []
-    print('processing data')
-    actions = mon.break_into_episodes('actors_action')
-
-    episodes = len(actions)
-    print('start plotting data')
-    x = np.arange(episodes)
-    for i in x:
-        ep = actions[i]
-        for j in range(len(ep)):
-            # f = scores[i][j] / max_scores[i]
-            # color = '#{:02x}0000'.format(int(255 * f))
-            lines.append(Point(i, ep[j],
-                               line_color='#00ff00'))
-
-    plot_lines(lines, labels=False)
 
 
 def plot_space_and_actions_across_episodes(mon):
@@ -134,11 +91,20 @@ def plot_space_and_actions_across_episodes(mon):
     # plotting spaces
     for i in x:
         space = spaces[i]
+        pts = []
+        dtype = [('height', float), ('score', float)]
         for j in range(len(space)):
             f = scores[i][j] / max_scores[i]
-            color = '#{:02x}0000'.format(int(255 * (f ** 3)))
+            pts.append((space[j], f))
+
+        pts = np.array(pts, dtype=dtype)
+        pts = np.sort(pts, order='score')
+
+        for pt in pts:
+            f = pt['score']
+            color = '#{:02x}0000'.format(int(255 * (f ** 2)))
             f += .7
-            lines.append(Point(i, space[j],
+            lines.append(Point(i, pt['height'],
                                line_color=color, line_width=f, marker='1'))
 
     plot_lines(lines, labels=False)
@@ -176,6 +142,16 @@ class Action_space_data(Data):
 
         return totals
 
+    def get_number_of_unique_actions_used(self):
+        scores = self.break_into_episodes('usage')
+        totals = []
+        i = 0
+        for s in scores:
+            totals.append(len(np.where(s > 0)[0]))
+            i += 1
+
+        return totals
+
 
 if __name__ == '__main__':
     monitor = Action_space_data('temp')
@@ -183,9 +159,7 @@ if __name__ == '__main__':
     monitor.print_data()
 
     # plot_space_adaption_history(monitor)
-    # plot_lenghts(monitor)
-    # plot_space_across_episodes(monitor)
-    # plot_actors_actions_across_episodes(monitor)
-    plot_space_and_actions_across_episodes(monitor)
+    plot_lenghts(monitor)
+    # plot_space_and_actions_across_episodes(monitor)
 
     # print(monitor.break_into_episodes('space'))

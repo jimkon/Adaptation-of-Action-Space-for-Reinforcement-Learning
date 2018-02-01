@@ -13,10 +13,10 @@ from util.data import Timer
 AUTO_SAVE_AFTER_EPISODES = 500
 
 
-def run(episodes=2500,
+def run(episodes=5000,
         render=False,
         experiment='InvertedPendulum-v1',
-        max_actions=1e3,
+        max_actions=101,
         knn=0.1):
 
     env = gym.make(experiment)
@@ -26,7 +26,7 @@ def run(episodes=2500,
 
     steps = env.spec.timestep_limit
 
-    action_space_monitor = Data("action_space_" + str(episodes) + '_' + len(max_actions))
+    action_space_monitor = Data("action_space_" + str(episodes) + '_' + str(max_actions))
 
     # agent = DDPGAgent(env)
     agent = WolpertingerAgent(env, max_actions=max_actions, k_ratio=knn,

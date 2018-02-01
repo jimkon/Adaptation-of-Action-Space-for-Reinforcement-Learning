@@ -35,15 +35,6 @@ class WolpertingerAgent(agent.DDPGAgent):
         # return the best neighbor of the proto action
         return self.wolp_action(state, proto_action)
 
-    def observe(self, episode):
-        # episode['obs'] = self._np_shaping(episode['obs'], True)
-        # episode['action'] = self._np_shaping(episode['action'], False)
-        # episode['obs2'] = self._np_shaping(episode['obs2'], True)
-        # self.add_experience(episode)
-        super().observe(episode)
-        self.action_space.feedback()
-        # update action space for the action
-
     def wolp_action(self, state, proto_action):
         # get the proto_action's k nearest neighbors
         actions, indexes = self.action_space.search_point(proto_action, self.k_nearest_neighbors)
@@ -56,6 +47,6 @@ class WolpertingerAgent(agent.DDPGAgent):
         result_action = actions[max_index]
         result_index = indexes[max_index]
         # return index to action space module
-        self.action_space.action_selected(result_index)
+        self.action_space.action_selected(result_index, proto_action)
         # return the best action
         return result_action
