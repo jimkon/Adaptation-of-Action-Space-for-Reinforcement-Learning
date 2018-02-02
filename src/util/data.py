@@ -106,7 +106,7 @@ class Data:
     def load(self, path=None):
         if path is None:
             path = self.name
-        with open('results/obj/' + path + '.pkl', 'rb') as f:
+        with open('/home/jim/Desktop/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/results/obj/' + path + '.pkl', 'rb') as f:
             self.data = pickle.load(f)
 
     def temp_save(self):
@@ -129,7 +129,7 @@ class Data:
             clone_data.merge(self)
             self.data = clone_data.data
 
-        with open('results/obj/' + path + '.pkl', 'wb') as f:
+        with open('/home/jim/Desktop/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/results/obj/' + path + '.pkl', 'wb') as f:
             pickle.dump(self.data, f, 0)
 
     def print_times(self, other_keys=None, groups=None, total_time_field=None):

@@ -110,7 +110,56 @@ def plot_space_and_actions_across_episodes(mon):
     plot_lines(lines, labels=False)
 
 
+def plot_action_density(mon):
+    if 'densities' not in mon.get_keys():
+        print('computing action space density')
+        mon.compute_densities()
+        mon.save()
+
+    data = mon.get_data('densities')
+    n = int(data[0])
+    offset = 1 / n
+    count = 1
+    data = data[count:]
+    # print(data)
+    lines = []
+    x_axis = range(int(len(data) / n))
+    for j in range(n):
+        lines.append(Line([x_axis[0], x_axis[len(x_axis) - 1]],
+                          [j * offset, j * offset], line_color='#a0a0a0'))
+        temp = []
+        for x in x_axis:
+            v = data[j + x * n]
+            temp.append(v)
+        temp = np.array(temp)
+        avg = np.average(temp)
+        color = '#{:02x}00{:02x}'.format(int(avg * 255), int(avg * 125))
+
+        temp = (temp + j) * offset
+        lines.append(Line(x_axis, temp, line_color=color))
+        # text='actions%({}-{})'.format(j * offset, (j + 1) * offset)))
+
+    lines.append(Line([x_axis[0], x_axis[len(x_axis) - 1]],
+                      [n * offset, n * offset], line_color='#a0a0a0'))
+
+    plot_lines(lines, labels=False, grid_flag=False)
+
+
 class Action_space_data(Data):
+
+    def compute_densities(self, n=9):
+        spaces = self.break_into_episodes('space')
+
+        self.add_array('densities')
+        self.add_to_array('densities', n)
+
+        for ep in spaces:
+            density = np.zeros(n)
+            for action in ep:
+                index = min(int(action * n), n - 1)
+                density[index] += 1
+            density /= len(ep)
+            self.add_to_array('densities', density)
 
     def break_into_episodes(self, field):
         data = self.get_data(field)
@@ -156,10 +205,11 @@ class Action_space_data(Data):
 if __name__ == '__main__':
     monitor = Action_space_data('temp')
     monitor.load()
-    monitor.print_data()
+    # monitor.print_data()
 
+    plot_action_density(monitor)
     # plot_space_adaption_history(monitor)
-    plot_lenghts(monitor)
+    # plot_lenghts(monitor)
     # plot_space_and_actions_across_episodes(monitor)
 
     # print(monitor.break_into_episodes('space'))

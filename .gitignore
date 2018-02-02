@@ -12,6 +12,7 @@ clipboard.py
 example.py
 pyflann_timing.py
 action_space_run_simulation.py
+show_results_temp.py
 
 # .pyc files
 *.pyc
