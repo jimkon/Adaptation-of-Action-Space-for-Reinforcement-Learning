@@ -32,6 +32,17 @@ class Action_space_evolution:
         return self.__population
 
 
+class AMR(Action_space_evolution):
+
+    def __init__(self, first_population, max_actions):
+        super().__init__(first_population)
+        self._upper_limit = int(max_actions)
+        self._lower_limit = len(first_population)
+
+    def _evolve(self):
+        pass
+
+
 class ParticleFilter(Action_space_evolution):
 
     ADAPTION_FACTOR = .1

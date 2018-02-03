@@ -203,13 +203,13 @@ class Action_space_data(Data):
 
 
 if __name__ == '__main__':
-    monitor = Action_space_data('temp')
+    monitor = Action_space_data('action_space_5000_101')
     monitor.load()
     # monitor.print_data()
 
-    plot_action_density(monitor)
+    # plot_action_density(monitor)
     # plot_space_adaption_history(monitor)
-    # plot_lenghts(monitor)
+    plot_lenghts(monitor)
     # plot_space_and_actions_across_episodes(monitor)
 
     # print(monitor.break_into_episodes('space'))
