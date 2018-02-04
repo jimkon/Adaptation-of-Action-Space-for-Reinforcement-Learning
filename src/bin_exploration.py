@@ -177,13 +177,12 @@ class Exploration_tree:
     def get_nodes(self):
         return self._nodes
 
-    def get_location(self):
+    def get_points(self):
+        result = []
         nodes = self.get_nodes()
-        res = []
         for node in nodes:
-            res.append(node.get_location())
-
-        return res
+            result.append(node.get_location())
+        return np.array(result)
 
     def get_lenght(self):
         return self._lenght
@@ -241,8 +240,10 @@ if __name__ == '__main__':
     dims = 2
 
     tree = Exploration_tree(dims, 20)
+    print(len(tree.get_points()), tree.get_points())
+    exit()
 
-    for i in [100]:
+    for i in [10]:
         samples = np.abs(0.3 * np.random.standard_normal((i, dims))) % 1
         for p in samples:
             p = list(p)

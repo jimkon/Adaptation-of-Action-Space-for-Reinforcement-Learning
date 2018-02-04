@@ -5,6 +5,7 @@ import pyflann
 import util.my_plotlib as mplt
 from util.data_graph import plot_3d_points
 import action_space_evolution as ev
+import bin_exploration
 
 
 """
@@ -22,13 +23,9 @@ class Space:
         self._range = self._high - self._low
         self._dimensions = len(low)
 
-        self.__space = init_uniform_space(np.zeros(self._dimensions),
-                                          np.ones(self._dimensions),
-                                          points)
-        self.__actions_score = np.zeros(self.__space.shape[0])
-        # self.__actions_evolution = ev.Action_space_evolution()
-        # self._actions_evolution = ev.Genetic_Algorithm()
-        self._actions_evolution = ev.ParticleFilter(self.__space, points * 2)
+        self._action_space_module = bin_exploration.Exploration_tree(self._dimensions, points)
+
+        self.__space = self._action_space_module.get_points()
 
         self._flann = pyflann.FLANN()
         self.rebuild_flann()
@@ -41,7 +38,7 @@ class Space:
 
     def update(self):
         self._flann.delete_index()
-        self.monitor.add_to_array('usage', self.__actions_score)
+
         self.monitor.add_to_array('space', self.__space)
         self.monitor.add_to_array('lenght', len(self.__space))
 
@@ -51,11 +48,9 @@ class Space:
         self.__actions_score = np.zeros(self.__space.shape[0])
         self.rebuild_flann()
 
-    def new_actions(self):
-        return self.__space[np.where(self.__actions_score > 0)]
-
     def search_point(self, point, k):
         p_in = self._import_point(point)
+        self.monitor.add_to_array('usage', p_in)
         indexes, _ = self._flann.nn_index(p_in, k)
         knns = self.__space[indexes]
         p_out = []
@@ -67,7 +62,7 @@ class Space:
     # remove proto action
     def action_selected(self, actions_index, actors_action):
         # action selected for actors action and got reward
-        self.__actions_score[actions_index] += 1
+
         self.monitor.add_to_array('actors_action', self._import_point(actors_action))
 
     def _import_point(self, point):
