@@ -193,7 +193,7 @@ class Exploration_tree:
         plt.grid(True)
         print('nodes to plot:', len(nodes))
         for node in nodes:
-            print(node)
+            # print(node)
             parent, child = node.get_connection_with_parent()
             color = (50 * node._level) % 255
             # plt.plot([parent[0], child[0]], [parent[1], child[1]],
@@ -229,16 +229,23 @@ if __name__ == '__main__':
 
     tree = Exploration_tree(1, 20)
 
-    samples = np.random.standard_normal(20)
+    samples = np.abs(np.random.standard_normal(20))
     for p in samples:
         tree.expand_towards([p])
 
-    for i in range(10):
-        p = [np.random.normal(loc=0.5, scale=.1)]
-        # print(p)
-        # tree.search_nearest_node(p)
+    tree._reset_values()
+    tree.plot()
+
+    samples = np.abs(np.random.standard_normal(2)) % 1
+    for p in samples:
+        tree.expand_towards([p])
+        print(p)
+        tree.plot()
+
     tree.plot()
     print('pruning above', tree._min_level, 'starting size = ', tree._lenght)
+
     tree.prune()
+
     print('size after pruning = ', tree._lenght)
     tree.plot()
