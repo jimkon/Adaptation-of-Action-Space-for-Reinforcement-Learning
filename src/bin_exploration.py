@@ -51,10 +51,9 @@ class Node:
     def recursive_pruning(self, min_level, value_threshold):
         if self.is_leaf():
             return
-        if self._level >= min_level and self._value <= value_threshold:
-            print('prune', self)
+        needs_pruning = self._level >= min_level and self._value <= value_threshold
+        if needs_pruning:
             self._branches = []
-
         else:
             for branch in self._branches:
                 branch.recursive_pruning(min_level, value_threshold)
@@ -152,8 +151,7 @@ class Exploration_tree:
 
     def get_node(self, index):
         node = self.get_nodes()[index]
-        node.increase_value()
-        return node
+        return self.search_nearest_node(node.get_location())
 
     def _expand_node(self, node):
         new_nodes = node.expand()
@@ -187,6 +185,9 @@ class Exploration_tree:
 
         return res
 
+    def get_lenght(self):
+        return self._lenght
+
     def plot(self):
         nodes = self.get_nodes()
         plt.figure()
@@ -195,18 +196,28 @@ class Exploration_tree:
         for node in nodes:
             # print(node)
             parent, child = node.get_connection_with_parent()
-            color = (50 * node._level) % 255
-            # plt.plot([parent[0], child[0]], [parent[1], child[1]],
-            #          '#{:02x}0000'.format(color), marker='*')
+            r = 0
+            b = 0
+            if node.get_value() == 0 and node._parent is not None:
+
+                if node._level > self._min_level and node._parent.get_value() == 0:
+                    b = 255
+                else:
+                    r = 255
             if self._dimensions == 1:
-                x = child[0]
-                y = node._level
-                plt.plot([x, x], [-0.9, -1], '#000000', linewidth=1)
+                x = [child[0], parent[0]]
+                y = [node._level, node._level - 1]
+
+                plt.plot([x, x], [-0.1, -0.2], '#000000', linewidth=1)
             else:
-                x = child[0]
-                y = child[1]
-            plt.plot([x], [y],
-                     '#0000{:02x}'.format(255 if node.get_value() == 0 else 0), marker='1')
+                x = [child[0], parent[0]]
+                y = [child[1], parent[1]]
+
+                plt.plot([child[0], child[0]], [-0.1, -0.12], '#000000', linewidth=1)
+                plt.plot([-0.1, -0.12], [child[1], child[1]], '#000000', linewidth=1)
+
+            plt.plot(x, y,
+                     '#{:02x}00{:02x}'.format(r, b), marker='1', linewidth=0.2)
 
         plt.show()
 
@@ -227,25 +238,26 @@ class Exploration_tree:
 
 if __name__ == '__main__':
 
-    tree = Exploration_tree(1, 20)
+    dims = 2
 
-    samples = np.abs(np.random.standard_normal(20))
-    for p in samples:
-        tree.expand_towards([p])
+    tree = Exploration_tree(dims, 20)
 
-    tree._reset_values()
-    tree.plot()
+    for i in [100]:
+        samples = np.abs(0.3 * np.random.standard_normal((i, dims))) % 1
+        for p in samples:
+            p = list(p)
+            tree.expand_towards(p)
+        print('samples added', len(samples), samples)
 
-    samples = np.abs(np.random.standard_normal(2)) % 1
-    for p in samples:
-        tree.expand_towards([p])
-        print(p)
+        tree.plot()
+        print('pruning above', tree._min_level, 'starting size = ', tree._lenght)
+
+        tree.prune()
+
+        print('size after pruning = ', tree._lenght)
         tree.plot()
 
+    print(tree.get_node(np.random.randint(0, high=tree.get_lenght())))
     tree.plot()
-    print('pruning above', tree._min_level, 'starting size = ', tree._lenght)
-
     tree.prune()
-
-    print('size after pruning = ', tree._lenght)
     tree.plot()
