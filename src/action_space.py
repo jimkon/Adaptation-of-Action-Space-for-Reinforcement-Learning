@@ -3,6 +3,7 @@ import itertools
 import pyflann
 
 import util.my_plotlib as mplt
+import matplotlib.pyplot as plt
 from util.data_graph import plot_3d_points
 import action_space_evolution as ev
 import bin_exploration
@@ -23,7 +24,8 @@ class Space:
         self._range = self._high - self._low
         self._dimensions = len(low)
 
-        self._action_space_module = bin_exploration.Exploration_tree(self._dimensions, points)
+        self._action_space_module = bin_exploration.Exploration_tree(
+            self._dimensions, points, 20 * points, autoprune=True)
 
         self.__space = self._action_space_module.get_points()
 
@@ -42,9 +44,8 @@ class Space:
         self.monitor.add_to_array('space', self.__space)
         self.monitor.add_to_array('lenght', len(self.__space))
 
-        new_actions = self._actions_evolution.get_next_generation(self.__actions_score)
-        self.__space = np.reshape(new_actions, (len(new_actions), self._dimensions))
-
+        self._action_space_module.prune()
+        self.__space = self._action_space_module.get_points()
         self.__actions_score = np.zeros(self.__space.shape[0])
         self.rebuild_flann()
 
@@ -59,10 +60,11 @@ class Space:
 
         return np.array(p_out)[0], indexes[0]
 
-    # remove proto action
     def action_selected(self, actions_index, actors_action):
         # action selected for actors action and got reward
-
+        self._action_space_module.expand_towards(self._import_point(actors_action))
+        # node = self._action_space_module.get_node(actions_index)
+        # self._action_space_module.expand_towards(node.get_location())
         self.monitor.add_to_array('actors_action', self._import_point(actors_action))
 
     def _import_point(self, point):
@@ -80,19 +82,9 @@ class Space:
     def get_number_of_actions(self):
         return self.shape()[0]
 
-    def plot_usage(self):
-        lines = []
-        count = self.__actions_score
-        x = self.get_space()
-
-        # lines.append(mplt.Line(x, count, line_color="b"))
-        for i in range(len(x)):
-            lines.append(mplt.Line([x[i], x[i]], [-.1, count[i]], line_color='#000000'))
-
-        mplt.plot_lines(lines, labels=False)
-
-    def plot_space(self, additional_points=None):
-
+    def plot_space(self, id, additional_points=None):
+        self._action_space_module.plot(id)
+        return
         dims = self._dimensions
 
         if dims > 3:
@@ -101,16 +93,16 @@ class Space:
             return
 
         space = self.get_space()
+
         if additional_points is not None:
             for i in additional_points:
                 space = np.append(space, additional_points, axis=0)
 
         if dims == 1:
-            lines = []
+            plt.grid(True)
             for x in space:
-                lines.append(mplt.Line([x], [0], line_color='o'))
-
-            mplt.plot_lines(lines, labels=False)
+                plt.plot(x, [0], 'b1')
+            plt.show()
         elif dims == 2:
             lines = []
             for x, y in space:

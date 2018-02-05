@@ -24,13 +24,27 @@ class Node:
         else:
             self._level = 0
 
-    def expand(self):
-        if not self.is_leaf():
+    def expand(self, full_expansion=True, towards=None):
+        if not self.is_expandable():
             return None
         new_radius = self._radius / 2
+
+        temp_branches = []
         for mat in self.BRANCH_MATRIX:
             new_location = self._location + mat * new_radius
-            self._branches.append(Node(new_location, new_radius, self))
+            new_node = Node(new_location, new_radius, self)
+            for node in self._branches:
+                if node._equals(new_node):
+                    continue
+            temp_branches.append(new_node)
+
+        if (not full_expansion) and (towards is not None):
+            for node in temp_branches:
+                if node._covers_point(towards):
+                    self._branches.append(node)
+                    break
+        else:
+            self._branches = temp_branches
 
         return self._branches
 
@@ -46,17 +60,29 @@ class Node:
             if res is not None:
                 return res
 
-        return None
+        return self
 
     def recursive_pruning(self, min_level, value_threshold):
         if self.is_leaf():
             return
-        needs_pruning = self._level >= min_level and self._value <= value_threshold
-        if needs_pruning:
-            self._branches = []
-        else:
-            for branch in self._branches:
-                branch.recursive_pruning(min_level, value_threshold)
+
+        to_remove = []
+        for node in self._branches:
+            if node.get_value() <= value_threshold and node.get_level() > min_level:
+                to_remove.append(node)
+
+        for node in to_remove:
+            self._branches.remove(node)
+
+        for node in self._branches:
+            node.recursive_pruning(min_level, value_threshold)
+
+        # needs_pruning = self._level >= min_level and self._value <= value_threshold
+        # if needs_pruning:
+        #     self._branches = []
+        # else:
+        #     for branch in self._branches:
+        #         branch.recursive_pruning(min_level, value_threshold)
 
     def collect_sub_branches(self):
         if self.is_leaf():
@@ -73,6 +99,9 @@ class Node:
     def reset_value(self):
         self._value = 0
 
+    def get_level(self):
+        return self._level
+
     def get_location(self):
         return self._location
 
@@ -85,6 +114,9 @@ class Node:
     def is_leaf(self):
         return len(self._branches) == 0
 
+    def is_expandable(self):
+        return len(self._branches) < len(self.BRANCH_MATRIX)
+
     def increase_value(self):
         self._value += 1
 
@@ -92,6 +124,10 @@ class Node:
         check1 = self.point_less_or_equal_than_point(self._low_limit, point)
         check2 = self.point_less_or_equal_than_point(point, self._high_limit)
         return check1 and check2
+
+    def _equals(self, node):
+
+        return np.array_equal(self.get_location(), node.get_location())
 
     def __str__(self):
         return 'loc={} level={} r={} br={} v={}'.format(self._location,
@@ -120,7 +156,13 @@ class Node:
 
 class Exploration_tree:
 
-    def __init__(self, dims, n):
+    FULL_EXPANSION = True
+    EXPANSION_VALUE_THRESHOLD = 1
+    AUTOPRUNE_PERCENTAGE = .9
+
+    def __init__(self, dims, n, max_nodes, autoprune=False):
+        self._max_size = max_nodes
+        self._autoprune = autoprune
         self._dimensions = dims
         self._branch_factor = self._dimensions * 2
         root = Node(np.ones(dims) * 0.5, 0.5, None)
@@ -132,14 +174,22 @@ class Exploration_tree:
         self._min_level = self.compute_level(n, self._branch_factor)
         self._add_layers(self._min_level)
 
+        self.value_threshold = 0
+
     def expand_towards(self, point):
         assert len(point) == self._dimensions, 'input point must have same number of dimensions: {}'.format(
             self._dimensions)
+
         node = self.search_nearest_node(point, increase=True)
-        if node is not None:
-            self._expand_node(node)
+        if (node is not None) and self.get_lenght() < self._max_size:
+            self._expand_node(node,
+                              towards=point)
 
     def prune(self, value_threshold=0):
+        print("full % ", self.get_lenght() / self._max_size)
+        if self._autoprune and (self.get_lenght() / self._max_size < self.AUTOPRUNE_PERCENTAGE):
+            print('autoprune block')
+            return
         self._root.recursive_pruning(self._min_level, value_threshold)
         self._nodes = self._root.collect_sub_branches()
         self._lenght = len(self._nodes)
@@ -151,14 +201,20 @@ class Exploration_tree:
 
     def get_node(self, index):
         node = self.get_nodes()[index]
-        return self.search_nearest_node(node.get_location())
+        self.expand_towards(node.get_location())
+        return node
+        # return self.search_nearest_node(node.get_location())
 
-    def _expand_node(self, node):
-        new_nodes = node.expand()
+    def _expand_node(self, node, towards=None):
+        if node.get_level() > self._min_level and node.get_value() < self.EXPANSION_VALUE_THRESHOLD:
+            return
+
+        new_nodes = node.expand(self.FULL_EXPANSION, towards)
         if new_nodes is None:
             return
-        self._nodes.extend(new_nodes)
-        self._lenght += len(new_nodes)
+        else:
+            self._nodes.extend(new_nodes)
+            self._lenght += len(new_nodes)
 
     def _reset_values(self):
         nodes = self.get_nodes()
@@ -187,7 +243,7 @@ class Exploration_tree:
     def get_lenght(self):
         return self._lenght
 
-    def plot(self):
+    def plot(self, id):
         nodes = self.get_nodes()
         plt.figure()
         plt.grid(True)
@@ -199,7 +255,7 @@ class Exploration_tree:
             b = 0
             if node.get_value() == 0 and node._parent is not None:
 
-                if node._level > self._min_level and node._parent.get_value() == 0:
+                if node._level > self._min_level and node.get_value() == 0:
                     b = 255
                 else:
                     r = 255
@@ -207,18 +263,21 @@ class Exploration_tree:
                 x = [child[0], parent[0]]
                 y = [node._level, node._level - 1]
 
-                plt.plot([x, x], [-0.1, -0.2], '#000000', linewidth=1)
+                plt.plot([x, x], [-0.1, -0.2], '#000000', linewidth=0.5)
             else:
                 x = [child[0], parent[0]]
                 y = [child[1], parent[1]]
 
-                plt.plot([child[0], child[0]], [-0.1, -0.12], '#000000', linewidth=1)
-                plt.plot([-0.1, -0.12], [child[1], child[1]], '#000000', linewidth=1)
+                plt.plot([child[0], child[0]], [-0.1, -0.12], '#000000', linewidth=.5)
+                plt.plot([-0.1, -0.12], [child[1], child[1]], '#000000', linewidth=.5)
 
             plt.plot(x, y,
-                     '#{:02x}00{:02x}'.format(r, b), marker='1', linewidth=0.2)
+                     '#{:02x}00{:02x}'.format(r, b), linewidth=0.2)
+            plt.plot(x[0], y[0],
+                     '#{:02x}00{:02x}'.format(r, b), marker='.')
 
-        plt.show()
+        plt.savefig("/home/jim/Desktop/dip/notes/bin exploration/series/f{}.png".format(id))
+        # plt.show()
 
     @staticmethod
     def compute_level(n, branches_of_each_node):
@@ -237,18 +296,17 @@ class Exploration_tree:
 
 if __name__ == '__main__':
 
-    dims = 2
+    dims = 1
 
-    tree = Exploration_tree(dims, 20)
-    print(len(tree.get_points()), tree.get_points())
-    exit()
+    tree = Exploration_tree(dims, 10, 40, autoprune=True)
+    tree.plot()
 
-    for i in [10]:
+    for i in [2, 20, 30]:
         samples = np.abs(0.3 * np.random.standard_normal((i, dims))) % 1
+        print('samples added', len(samples), samples)
         for p in samples:
             p = list(p)
             tree.expand_towards(p)
-        print('samples added', len(samples), samples)
 
         tree.plot()
         print('pruning above', tree._min_level, 'starting size = ', tree._lenght)
@@ -258,7 +316,7 @@ if __name__ == '__main__':
         print('size after pruning = ', tree._lenght)
         tree.plot()
 
-    print(tree.get_node(np.random.randint(0, high=tree.get_lenght())))
-    tree.plot()
-    tree.prune()
-    tree.plot()
+    # print(tree.get_node(np.random.randint(0, high=tree.get_lenght())))
+    # tree.plot()
+    # tree.prune()
+    # tree.plot()
