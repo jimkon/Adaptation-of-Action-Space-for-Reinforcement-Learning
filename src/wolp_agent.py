@@ -17,14 +17,19 @@ class WolpertingerAgent(agent.DDPGAgent):
             print('This version works only for continuous action space')
             exit()
 
-        self.k_nearest_neighbors = int(max_actions * k_ratio)
+        self.k_nearest_neighbors = int(
+            min(max_actions * k_ratio, self.action_space.get_number_of_actions()))
+        print('knn', self.k_nearest_neighbors)
 
     def get_name(self):
-        return 'Wolp4_{}k{}_{}'.format(self.action_space.get_number_of_actions(),
+        return 'Wolp4_{}k{}_{}'.format(self.action_space.get_max_size(),
                                        self.k_nearest_neighbors, self.experiment)
 
     def get_action_space(self):
         return self.action_space
+
+    def get_action_space_size(self):
+        return self.action_space.get_size()
 
     def act(self, state):
         # taking a continuous action from the actor

@@ -25,7 +25,7 @@ class Space:
         self._dimensions = len(low)
 
         self._action_space_module = bin_exploration.Exploration_tree(
-            self._dimensions, points, 20 * points, autoprune=True)
+            self._dimensions, points, autoprune=True)
 
         self.__space = self._action_space_module.get_points()
 
@@ -75,6 +75,12 @@ class Space:
 
     def get_space(self):
         return self.__space
+
+    def get_size(self):
+        return self._action_space_module.get_lenght()
+
+    def get_max_size(self):
+        return self._action_space_module.get_max_lenght()
 
     def shape(self):
         return self.__space.shape

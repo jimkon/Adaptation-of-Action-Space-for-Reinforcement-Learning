@@ -158,9 +158,10 @@ class Exploration_tree:
 
     FULL_EXPANSION = True
     EXPANSION_VALUE_THRESHOLD = 1
-    AUTOPRUNE_PERCENTAGE = .9
+    AUTOPRUNE_PERCENTAGE = .8
+    INIT_TO_MAX_ACTIONS_RATIO = .01
 
-    def __init__(self, dims, n, max_nodes, autoprune=False):
+    def __init__(self, dims, max_nodes, autoprune=False):
         self._max_size = max_nodes
         self._autoprune = autoprune
         self._dimensions = dims
@@ -171,14 +172,16 @@ class Exploration_tree:
         self._root = root
         Node._init_branch_matrix(self._dimensions)
 
-        self._min_level = self.compute_level(n, self._branch_factor)
+        init_actions = int(max(5, self._max_size * self.INIT_TO_MAX_ACTIONS_RATIO))
+
+        self._min_level = self.compute_level(init_actions, self._branch_factor)
         self._add_layers(self._min_level)
 
         self.value_threshold = 0
 
     def expand_towards(self, point):
-        assert len(point) == self._dimensions, 'input point must have same number of dimensions: {}'.format(
-            self._dimensions)
+        assert len(point) == self._dimensions, 'input point must have same number of dimensions: {} given point: {}'.format(
+            self._dimensions, point)
 
         node = self.search_nearest_node(point, increase=True)
         if (node is not None) and self.get_lenght() < self._max_size:
@@ -186,9 +189,7 @@ class Exploration_tree:
                               towards=point)
 
     def prune(self, value_threshold=0):
-        print("full % ", self.get_lenght() / self._max_size)
         if self._autoprune and (self.get_lenght() / self._max_size < self.AUTOPRUNE_PERCENTAGE):
-            print('autoprune block')
             return
         self._root.recursive_pruning(self._min_level, value_threshold)
         self._nodes = self._root.collect_sub_branches()
@@ -243,7 +244,12 @@ class Exploration_tree:
     def get_lenght(self):
         return self._lenght
 
-    def plot(self, id):
+    def get_max_lenght(self):
+        return self._max_size
+
+    SAVE_ID = 0
+
+    def plot(self, save=False, path='/home/jim/Desktop/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/results/pics'):
         nodes = self.get_nodes()
         plt.figure()
         plt.grid(True)
@@ -276,8 +282,11 @@ class Exploration_tree:
             plt.plot(x[0], y[0],
                      '#{:02x}00{:02x}'.format(r, b), marker='.')
 
-        plt.savefig("/home/jim/Desktop/dip/notes/bin exploration/series/f{}.png".format(id))
-        # plt.show()
+        if save:
+            plt.savefig("{}/a{}.png".format(path, self.SAVE_ID))
+            self.SAVE_ID += 1
+        else:
+            plt.show()
 
     @staticmethod
     def compute_level(n, branches_of_each_node):
@@ -298,23 +307,27 @@ if __name__ == '__main__':
 
     dims = 1
 
-    tree = Exploration_tree(dims, 10, 40, autoprune=True)
-    tree.plot()
+    tree = Exploration_tree(dims, 10)
+    tree.plot(save=True, path='/home/jim/Desktop/dip/notes/bin exploration/series/')
 
-    for i in [2, 20, 30]:
-        samples = np.abs(0.3 * np.random.standard_normal((i, dims))) % 1
-        print('samples added', len(samples), samples)
-        for p in samples:
-            p = list(p)
-            tree.expand_towards(p)
+    tree.expand_towards([0.125])
+    tree.expand_towards([0.125])
+    tree.plot(save=True, path='/home/jim/Desktop/dip/notes/bin exploration/series/')
 
-        tree.plot()
-        print('pruning above', tree._min_level, 'starting size = ', tree._lenght)
-
-        tree.prune()
-
-        print('size after pruning = ', tree._lenght)
-        tree.plot()
+    # for i in [2, 20, 30]:
+    #     samples = np.abs(0.3 * np.random.standard_normal((i, dims))) % 1
+    #     print('samples added', len(samples), samples)
+    #     for p in samples:
+    #         p = list(p)
+    #         tree.expand_towards(p)
+    #
+    #     tree.plot()
+    #     print('pruning above', tree._min_level, 'starting size = ', tree._lenght)
+    #
+    #     tree.prune()
+    #
+    #     print('size after pruning = ', tree._lenght)
+    #     tree.plot()
 
     # print(tree.get_node(np.random.randint(0, high=tree.get_lenght())))
     # tree.plot()
