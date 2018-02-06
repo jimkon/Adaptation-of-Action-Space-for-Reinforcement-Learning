@@ -347,7 +347,6 @@ class Agent_data(Data):
 
         return i
 
-
     def get_adaption_time(self, reward_threshold=50):
         first_increase = self.get_adaption_episode(reward_threshold)
         adaption_time = len(self.get_episodes_data('actions', np.arange(first_increase)))

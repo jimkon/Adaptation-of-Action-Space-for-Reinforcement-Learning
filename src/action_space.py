@@ -3,8 +3,10 @@ import itertools
 import pyflann
 
 import util.my_plotlib as mplt
+import matplotlib.pyplot as plt
 from util.data_graph import plot_3d_points
 import action_space_evolution as ev
+import bin_exploration
 
 
 """
@@ -22,54 +24,48 @@ class Space:
         self._range = self._high - self._low
         self._dimensions = len(low)
 
-        self.__space = init_uniform_space(np.zeros(self._dimensions),
-                                          np.ones(self._dimensions),
-                                          points)
-        self.__actions_score = np.zeros(self.__space.shape[0])
-        # self.__actions_evolution = ev.Action_space_evolution()
-        # self._actions_evolution = ev.Genetic_Algorithm()
-        self._actions_evolution = ev.ParticleFilter(points * 2)
+        self._action_space_module = bin_exploration.Exploration_tree(
+            self._dimensions, points, autoprune=True)
+
+        self.__space = self._action_space_module.get_points()
 
         self._flann = pyflann.FLANN()
         self.rebuild_flann()
 
         self.monitor = monitor
-        self.monitor.add_arrays(['space', 'usage', 'lenght'])
-        self.monitor.add_to_array('space', self.__space)
-        self.monitor.add_to_array('lenght', len(self.__space))
+        self.monitor.add_arrays(['space', 'usage', 'lenght', 'actors_action'])
 
     def rebuild_flann(self):
         self._index = self._flann.build_index(np.copy(self.__space), algorithm='kdtree')
 
     def update(self):
         self._flann.delete_index()
-        self.monitor.add_to_array('usage', self.__actions_score)
-        self._actions_evolution.update_population(self.__space, self.__actions_score)
 
-        new_actions = self._actions_evolution.get_next_generation()
-        self.__space = np.reshape(new_actions, (len(new_actions), self._dimensions))
         self.monitor.add_to_array('space', self.__space)
         self.monitor.add_to_array('lenght', len(self.__space))
 
+        self._action_space_module.prune()
+        self.__space = self._action_space_module.get_points()
         self.__actions_score = np.zeros(self.__space.shape[0])
         self.rebuild_flann()
 
-    def new_actions(self):
-        return self.__space[np.where(self.__actions_score > 0)]
-
     def search_point(self, point, k):
         p_in = self._import_point(point)
+        self.monitor.add_to_array('usage', p_in)
         indexes, _ = self._flann.nn_index(p_in, k)
         knns = self.__space[indexes]
         p_out = []
         for p in knns:
             p_out.append(self._export_point(p))
 
-        return np.array(p_out), indexes
+        return np.array(p_out)[0], indexes[0]
 
-    def feedback(self, actions_index, reward, actors_action):
+    def action_selected(self, actions_index, actors_action):
         # action selected for actors action and got reward
-        self.__actions_score[actions_index] += 1
+        self._action_space_module.expand_towards(self._import_point(actors_action))
+        # node = self._action_space_module.get_node(actions_index)
+        # self._action_space_module.expand_towards(node.get_location())
+        self.monitor.add_to_array('actors_action', self._import_point(actors_action))
 
     def _import_point(self, point):
         return (point - self._low) / self._range
@@ -80,25 +76,21 @@ class Space:
     def get_space(self):
         return self.__space
 
+    def get_size(self):
+        return self._action_space_module.get_lenght()
+
+    def get_max_size(self):
+        return self._action_space_module.get_max_lenght()
+
     def shape(self):
         return self.__space.shape
 
     def get_number_of_actions(self):
         return self.shape()[0]
 
-    def plot_usage(self):
-        lines = []
-        count = self.__actions_score
-        x = self.get_space()
-
-        lines.append(mplt.Line(x, count))
-        for i in x:
-            lines.append(mplt.Line([i, i], [-.1, -.4], line_color='#000000'))
-
-        mplt.plot_lines(lines, labels=False)
-
-    def plot_space(self, additional_points=None):
-
+    def plot_space(self, id, additional_points=None):
+        self._action_space_module.plot(id)
+        return
         dims = self._dimensions
 
         if dims > 3:
@@ -107,16 +99,16 @@ class Space:
             return
 
         space = self.get_space()
+
         if additional_points is not None:
             for i in additional_points:
                 space = np.append(space, additional_points, axis=0)
 
         if dims == 1:
-            lines = []
+            plt.grid(True)
             for x in space:
-                lines.append(mplt.Line([x], [0], line_color='o'))
-
-            mplt.plot_lines(lines, labels=False)
+                plt.plot(x, [0], 'b1')
+            plt.show()
         elif dims == 2:
             lines = []
             for x, y in space:

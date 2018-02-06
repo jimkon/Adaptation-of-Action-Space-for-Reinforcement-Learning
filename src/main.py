@@ -13,10 +13,10 @@ from util.data import Timer
 AUTO_SAVE_AFTER_EPISODES = 500
 
 
-def run(episodes=2500,
+def run(episodes=10000,
         render=False,
         experiment='InvertedPendulum-v1',
-        max_actions=1e3,
+        max_actions=10000,
         knn=0.1):
 
     env = gym.make(experiment)
@@ -26,7 +26,7 @@ def run(episodes=2500,
 
     steps = env.spec.timestep_limit
 
-    action_space_monitor = Data("action_space_" + str(episodes) + '_' + len(max_actions))
+    action_space_monitor = Data("action_space_" + str(episodes) + '_' + str(max_actions))
 
     # agent = DDPGAgent(env)
     agent = WolpertingerAgent(env, max_actions=max_actions, k_ratio=knn,
@@ -90,10 +90,14 @@ def run(episodes=2500,
                 data_fetcher.add_to_array('rewards', total_reward)  # ------
                 reward_sum += total_reward
                 time_passed = timer.get_time()
-                print('Reward:{} Steps:{} t:{} ({}/step) Cur avg={}'.format(total_reward, t,
-                                                                            time_passed, round(
-                                                                                time_passed / t),
-                                                                            round(reward_sum / (ep + 1))))
+                print('Reward:{} Steps:{} t:{} ({}/step) Cur avg={} ,{} actions(r={})'.format(total_reward, t,
+                                                                                              time_passed,
+                                                                                              round(
+                                                                                                  time_passed / t),
+                                                                                              round(
+                                                                                                  reward_sum / (ep + 1)),
+                                                                                              agent.get_action_space_size(),
+                                                                                              agent.get_action_space_size() / max_actions))
 
                 if ep % AUTO_SAVE_AFTER_EPISODES == AUTO_SAVE_AFTER_EPISODES - 1:
                     data_fetcher.temp_save()

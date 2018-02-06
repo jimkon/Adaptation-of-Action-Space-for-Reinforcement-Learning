@@ -11,19 +11,25 @@ class WolpertingerAgent(agent.DDPGAgent):
         super().__init__(env)
         self.experiment = env.spec.id
         if self.continious_action_space:
-            self.action_space = action_space.Space(self.low, self.high, max_actions)
+            self.action_space = action_space.Space(
+                self.low, self.high, max_actions, action_space_monitor)
         else:
             print('This version works only for continuous action space')
             exit()
 
-        self.k_nearest_neighbors = int(max_actions * k_ratio)
+        self.k_nearest_neighbors = int(
+            min(max_actions * k_ratio, self.action_space.get_number_of_actions()))
+        print('knn', self.k_nearest_neighbors)
 
     def get_name(self):
-        return 'Wolp3_{}k{}_{}'.format(self.action_space.get_number_of_actions(),
+        return 'Wolp4_{}k{}_{}'.format(self.action_space.get_max_size(),
                                        self.k_nearest_neighbors, self.experiment)
 
     def get_action_space(self):
         return self.action_space
+
+    def get_action_space_size(self):
+        return self.action_space.get_size()
 
     def act(self, state):
         # taking a continuous action from the actor
@@ -35,21 +41,22 @@ class WolpertingerAgent(agent.DDPGAgent):
         return self.wolp_action(state, proto_action)
 
     def observe(self, episode):
-        # episode['obs'] = self._np_shaping(episode['obs'], True)
-        # episode['action'] = self._np_shaping(episode['action'], False)
-        # episode['obs2'] = self._np_shaping(episode['obs2'], True)
-        # self.add_experience(episode)
         super().observe(episode)
-        # update action space for the action
+        if episode['done'] == 1:
+            self.action_space.update()
 
     def wolp_action(self, state, proto_action):
         # get the proto_action's k nearest neighbors
-        actions, indexes = self.action_space.search_point(proto_action, self.k_nearest_neighbors)[0]
-        # make all the state, action pairs for the critic
+        actions, indexes = self.action_space.search_point(proto_action, self.k_nearest_neighbors)
+        # make all the state-action pairs for the critic
         states = np.tile(state, [len(actions), 1])
         # evaluate each pair through the critic
         actions_evaluation = self.critic_net.evaluate_critic(states, actions)
-        # find the index of the pair with the maximum value
+        # find the pair with the maximum value
         max_index = np.argmax(actions_evaluation)
+        result_action = actions[max_index]
+        result_index = indexes[max_index]
+        # return index to action space module
+        self.action_space.action_selected(result_index, proto_action)
         # return the best action
-        return actions[max_index]
+        return result_action
