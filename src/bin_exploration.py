@@ -308,11 +308,6 @@ if __name__ == '__main__':
     dims = 1
 
     tree = Exploration_tree(dims, 10)
-    tree.plot(save=True, path='/home/jim/Desktop/dip/notes/bin exploration/series/')
-
-    tree.expand_towards([0.125])
-    tree.expand_towards([0.125])
-    tree.plot(save=True, path='/home/jim/Desktop/dip/notes/bin exploration/series/')
 
     # for i in [2, 20, 30]:
     #     samples = np.abs(0.3 * np.random.standard_normal((i, dims))) % 1
