@@ -2,6 +2,7 @@ import numpy as np
 import tensorflow as tf
 import math
 
+# LEARNING_RATE = 0.0001
 LEARNING_RATE = 0.0001
 BATCH_SIZE = 64
 TAU = 0.001
@@ -27,13 +28,21 @@ class ActorNet:
 
             # cost of actor network:
             # gets input from action_gradient computed in critic network file
-            self.q_gradient_input = tf.placeholder("float", [None, num_actions])
+            self.action_in = tf.placeholder("float", [None, num_actions])
+
+            self.loss = tf.reduce_mean(tf.sqrt(tf.reduce_sum(
+                tf.square(tf.subtract(self.actor_model, self.action_in)), axis=1)))
+
             self.actor_parameters = [self.W11_a, self.W12_a, self.B1_a,
                                      self.W2_a, self.B2_a, self.W3_a, self.B3_a]
-            self.parameters_gradients = tf.gradients(
-                self.actor_model, self.actor_parameters, -self.q_gradient_input)  # /BATCH_SIZE)
-            self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE).apply_gradients(
-                zip(self.parameters_gradients, self.actor_parameters))
+
+            self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(
+                self.loss, var_list=self.actor_parameters)
+
+            # self.parameters_gradients = tf.gradients(
+            #     self.actor_model, self.actor_parameters, -self.action_in)  # /BATCH_SIZE)
+            # self.optimizer = opt.apply_gradients(
+            #     zip(self.gradients, self.actor_parameters))
             # initialize all tensor variable parameters:
             self.sess.run(tf.global_variables_initializer())
 
@@ -79,6 +88,7 @@ class ActorNet:
 
         H1_a = tf.nn.softplus(tf.matmul(actor_state_in, W11_a) +
                               tf.matmul(actor_state2_in, W12_a) + B1_a)
+
         H2_a = tf.nn.tanh(tf.matmul(H1_a, W2_a) + B2_a)
         actor_model = tf.matmul(H2_a, W3_a) + B3_a
         return W11_a, W12_a, B1_a, W2_a, B2_a, W3_a, B3_a, actor_state_in, actor_state2_in, actor_model
@@ -91,11 +101,17 @@ class ActorNet:
         return self.sess.run(self.t_actor_model, feed_dict={self.t_actor_state_in: state_t_1,
                                                             self.t_actor_state2_in: state2_t_1})
 
-    def train_actor(self, actor_state_in, actor_state2_in, q_gradient_input):
+    def train_actor(self, actor_state_in, actor_state2_in, action_in):
         self.sess.run(self.optimizer, feed_dict={
                       self.actor_state_in: actor_state_in,
                       self.actor_state2_in: actor_state2_in,
-                      self.q_gradient_input: q_gradient_input})
+                      self.action_in: action_in})
 
     def update_target_actor(self):
         self.sess.run(self.update_target_actor_op)
+
+    def get_loss(self, actor_state_in, actor_state2_in, action_in):
+        return self.sess.run(self.loss, feed_dict={
+            self.actor_state_in: actor_state_in,
+            self.actor_state2_in: actor_state2_in,
+            self.action_in: action_in})
