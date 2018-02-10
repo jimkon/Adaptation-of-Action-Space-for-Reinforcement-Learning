@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from util.data_graph import plot_3d_points
 import action_space_evolution as ev
 import bin_exploration
+import util.action_space_data as data
 
 
 """
@@ -18,7 +19,7 @@ import bin_exploration
 
 class Space:
 
-    def __init__(self, low, high, points, monitor):
+    def __init__(self, low, high, points):
         self._low = np.array(low)
         self._high = np.array(high)
         self._range = self._high - self._low
@@ -32,8 +33,8 @@ class Space:
         self._flann = pyflann.FLANN()
         self.rebuild_flann()
 
-        self.monitor = monitor
-        self.monitor.add_arrays(['space', 'usage', 'lenght', 'actors_action'])
+        self.monitor = data.Action_space_data(low, high, points)
+        self.monitor.store_lenght(self._action_space_module.get_lenght())
 
     def rebuild_flann(self):
         self._index = self._flann.build_index(np.copy(self.__space), algorithm='kdtree')
@@ -41,17 +42,15 @@ class Space:
     def update(self):
         self._flann.delete_index()
 
-        self.monitor.add_to_array('space', self.__space)
-        self.monitor.add_to_array('lenght', len(self.__space))
-
         self._action_space_module.prune()
         self.__space = self._action_space_module.get_points()
-        self.__actions_score = np.zeros(self.__space.shape[0])
+        self.monitor.store_lenght(self._action_space_module.get_lenght())
+
         self.rebuild_flann()
 
     def search_point(self, point, k):
         p_in = self._import_point(point)
-        self.monitor.add_to_array('usage', p_in)
+        self.monitor.store_search_point(point)
         indexes, _ = self._flann.nn_index(p_in, k)
         knns = self.__space[indexes]
         p_out = []
@@ -63,9 +62,11 @@ class Space:
     def action_selected(self, actions_index, actors_action):
         # action selected for actors action and got reward
         self._action_space_module.expand_towards(self._import_point(actors_action))
-        # node = self._action_space_module.get_node(actions_index)
+        node = self._action_space_module.get_node(actions_index)
+
+        self.monitor.store_ndn(node.get_location())
         # self._action_space_module.expand_towards(node.get_location())
-        self.monitor.add_to_array('actors_action', self._import_point(actors_action))
+        self.monitor.store_continuous_action(self._import_point(actors_action))
 
     def _import_point(self, point):
         return (point - self._low) / self._range
@@ -87,6 +88,9 @@ class Space:
 
     def get_number_of_actions(self):
         return self.shape()[0]
+
+    # def get_monitor(self):
+    #     return monitor
 
     def plot_space(self, id, additional_points=None):
         self._action_space_module.plot(id)

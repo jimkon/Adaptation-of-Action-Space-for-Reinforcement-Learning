@@ -202,7 +202,7 @@ class Exploration_tree:
 
     def get_node(self, index):
         node = self.get_nodes()[index]
-        self.expand_towards(node.get_location())
+        # self.expand_towards(node.get_location())
         return node
         # return self.search_nearest_node(node.get_location())
 
