@@ -8,7 +8,7 @@ import os
 
 class Data:
 
-    AUTOSAVE_AFTER = 10000
+    AUTOSAVE_AFTER = 30000
 
     def __init__(self, name='default_name'):
         self.name = name
@@ -145,7 +145,8 @@ class Data:
                 temp_data = Data()
                 temp_data.load(path=temp_file)
                 clone_data.merge(temp_data)
-                os.remove('results/obj/' + temp_file + '.pkl')
+                os.remove(
+                    '/home/jim/Desktop/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/results/obj/' + temp_file + '.pkl')
             clone_data.merge(self)
             self.data = clone_data.data
 

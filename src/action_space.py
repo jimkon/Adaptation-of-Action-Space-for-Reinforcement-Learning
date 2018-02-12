@@ -50,23 +50,27 @@ class Space:
 
     def search_point(self, point, k):
         p_in = self._import_point(point)
-        self.monitor.store_search_point(point)
+        self._action_space_module.expand_towards(p_in)
+        self.monitor.store_search_point(p_in)
         indexes, _ = self._flann.nn_index(p_in, k)
+
         knns = self.__space[indexes]
+        self.monitor.store_ndn(knns[0][0])
+
         p_out = []
         for p in knns:
             p_out.append(self._export_point(p))
 
         return np.array(p_out)[0], indexes[0]
 
-    def action_selected(self, actions_index, actors_action):
+    def action_selected(self, actions_index):
         # action selected for actors action and got reward
-        self._action_space_module.expand_towards(self._import_point(actors_action))
+        # self._action_space_module.expand_towards(self._import_point(actors_action))
         node = self._action_space_module.get_node(actions_index)
 
-        self.monitor.store_ndn(node.get_location())
+        self.monitor.store_action(node.get_location())
         # self._action_space_module.expand_towards(node.get_location())
-        self.monitor.store_continuous_action(self._import_point(actors_action))
+        # self.monitor.store_continuous_action(self._import_point(actors_action))
 
     def _import_point(self, point):
         return (point - self._low) / self._range
@@ -88,9 +92,6 @@ class Space:
 
     def get_number_of_actions(self):
         return self.shape()[0]
-
-    # def get_monitor(self):
-    #     return monitor
 
     def plot_space(self, id, additional_points=None):
         self._action_space_module.plot(id)

@@ -57,6 +57,6 @@ class WolpertingerAgent(agent.DDPGAgent):
         result_action = actions[max_index]
         result_index = indexes[max_index]
         # return index to action space module
-        self.action_space.action_selected(result_index, proto_action)
+        self.action_space.action_selected(result_index)
         # return the best action
         return result_action
