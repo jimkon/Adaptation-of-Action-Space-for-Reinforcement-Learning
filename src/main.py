@@ -11,10 +11,10 @@ from util.data import Data
 from util.data import Timer
 
 
-def run(episodes=10002,
+def run(episodes=10000,
         render=False,
         experiment='InvertedPendulum-v1',
-        max_actions=1002,
+        max_actions=1000,
         knn=0.1):
 
     env = gym.make(experiment)
