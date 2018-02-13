@@ -3,7 +3,7 @@ import tensorflow as tf
 import math
 
 # LEARNING_RATE = 0.0001
-LEARNING_RATE = 0.0001
+LEARNING_RATE = 0.001
 BATCH_SIZE = 64
 TAU = 0.001
 
