@@ -32,6 +32,22 @@ def plot_actions(mon):
     plt.show()
 
 
+def plot_actions_distribution(mon):
+    bins = 30
+    bw = 0.9
+
+    proto_actions = mon.get_data('search_point')
+    nn_actions = mon.get_data('nearest_discrete_neighbor')
+    actions = mon.get_data('action')
+
+    plt.hist([proto_actions, nn_actions, actions], bins=bins,
+             rwidth=bw, align='mid', label=['proto action', 'nn', 'final action'])
+
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+
 def plot_lenghts(mon):
     lenghts = mon.get_data('lenght')
     plt.plot(lenghts, label='lenghts')
@@ -58,7 +74,7 @@ def plot_lenght_distribution(mon):
 
 def plot_error(mon):
     mean_error = mon.get_mean_action_error()
-    plt.plot(mean_error, label='mean error')
+    plt.plot(mean_error, label='mean error = {}'.format(mean_error[len(mean_error) - 1]))
 
     lenghts = mon.get_data('lenght')
     avg = np.average(lenghts)
@@ -66,11 +82,17 @@ def plot_error(mon):
     plt.plot([0, len(mean_error)], [expected_error, expected_error],
              label='expected error = {}'.format(expected_error))
 
-    # proto_actions = mon.get_data('search_point')
-    # nn_actions = mon.get_data('nearest_discrete_neighbor')
-    #
-    # abs_sum = np.absolute(proto_actions - nn_actions)
-    # plt.plot(abs_sum, label='error', linewidth=0.3)
+    proto_actions = mon.get_data('search_point')
+    nn_actions = mon.get_data('nearest_discrete_neighbor')
+
+    abs_sum = np.absolute(proto_actions - nn_actions)
+    wind_avg = apply_func_to_window(abs_sum, int(0.01 * len(abs_sum)), np.average)
+    plt.plot(wind_avg, label='windowed avg')
+
+    max_points = mon.get_data('max_points')
+    min_expected_error = 1.0 / (4 * max_points)  # discretization step /4
+    plt.plot([0, len(mean_error)], [min_expected_error, min_expected_error],
+             label='min expected error = {}'.format(min_expected_error))
 
     plt.legend()
     plt.grid(True)
@@ -115,7 +137,7 @@ class Action_space_data(Data):
         nn_actions = self.get_data('nearest_discrete_neighbor')
 
         abs_sum = np.absolute(proto_actions - nn_actions)
-        #print('avg', np.average(abs_sum))
+        # print('avg', np.average(abs_sum))
 
         return average_timeline(abs_sum)
 
@@ -131,14 +153,26 @@ def average_timeline(x):
     return res
 
 
+def apply_func_to_window(data, window_size, func):
+    data_lenght = len(data)
+    res = []
+    for i in range(data_lenght):
+        start = int(max(i - window_size / 2, 0))
+        end = int(min(i + window_size / 2, data_lenght - 1))
+        res.append(func(data[start:end]))
+
+    return res
+
+
 if __name__ == '__main__':
-    monitor = Action_space_data(load_path='action_space_1dim_10000')
+    monitor = Action_space_data(load_path='action_space_1dim_1002')
     monitor.load()
     monitor.print_data()
 
     # print('mean error', monitor.get_mean_action_error())
 
-    plot_actions(monitor)
-    plot_lenghts(monitor)
-    plot_lenght_distribution(monitor)
+    # plot_actions(monitor)
+    # plot_actions_distribution(monitor)
+    # plot_lenghts(monitor)
+    # plot_lenght_distribution(monitor)
     plot_error(monitor)
