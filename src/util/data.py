@@ -169,10 +169,7 @@ class Data:
                 file_name = '{}temp/{}{}.json'.format(self.PATH,
                                                       i,
                                                       self.get_file_name())
-                # print(file_name)
                 temp_data = load(file_name)
-                # temp_data.print_data()
-                # print('^^^^^^^^^^^^')
                 self.merge(temp_data)
                 os.remove(file_name)
 
