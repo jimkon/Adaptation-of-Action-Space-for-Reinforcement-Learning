@@ -244,8 +244,8 @@ class Exploration_tree:
         print('max size', self._max_size)
 
         diff = np.abs(cumulative - self._max_size * np.ones(len(cumulative)))
-        print(diff)
-        print('excess ', abs(self.get_lenght() - self._max_size))
+        print('diff', diff)
+        print('excess ', abs(self.get_lenght() - self._max_size), 'curr size', self.get_lenght())
         if np.min(diff) < abs(self.get_lenght() - self._max_size):
             print('prune nodes with value below ', np.argmin(diff))
         else:
@@ -346,21 +346,18 @@ if __name__ == '__main__':
 
     # tree._get_cutoff_value()
 
-    for i in [200]:
-        samples = np.abs(0.3 * np.random.standard_normal((i, dims))) % 1
-        # print('samples added', len(samples), samples)
-        for p in samples:
-            p = list(p)
-            tree.expand_towards(p)
-
-        # tree.plot()
-        # print('pruning above', tree._min_level, 'starting size = ', tree._lenght)
+    for i in [20]:
+        print(i)
+        # samples = np.abs(0.3 * np.random.standard_normal((i, dims))) % 1
+        # # print('samples added', len(samples), samples)
+        # for p in samples:
+        #     p = list(p)
+        #     tree.expand_towards(p)
         #
         # tree.prune()
-        #
-        # print('size after pruning = ', tree._lenght)
+
     # tree.plot()
-    tree._get_cutoff_value()
+    # tree._get_cutoff_value()
 
     # print(tree.get_node(np.random.randint(0, high=tree.get_lenght())))
     # tree.plot()
