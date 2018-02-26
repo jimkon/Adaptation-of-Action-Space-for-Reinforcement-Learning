@@ -93,6 +93,12 @@ class Node:
                 result.extend(branch.collect_sub_branches())
             return result
 
+    def recursive_collection(self, result_array, func):
+        result_array.append(func(self))
+        if not self.is_leaf():
+            for branch in self._branches:
+                branch.recursive_collection(result_array, func)
+
     def get_value(self):
         return self._value
 
@@ -160,7 +166,7 @@ class Exploration_tree:
     EXPANSION_VALUE_THRESHOLD = 1
     AUTOPRUNE_PERCENTAGE = .9
     INIT_TO_MAX_ACTIONS_RATIO = .3
-    OVERPOPULATION_FACTOR = .4
+    OVERPOPULATION_FACTOR = 1.0
 
     def __init__(self, dims, max_nodes, autoprune=True):
         self._max_size = max_nodes
@@ -220,6 +226,30 @@ class Exploration_tree:
         else:
             self._nodes.extend(new_nodes)
             self._lenght += len(new_nodes)
+
+    def _get_cutoff_value(self):
+        values = []
+        self._root.recursive_collection(values, lambda node: node.get_value())
+        print(len(values), values)
+
+        unique, counts = np.unique(values, return_counts=True)
+        print(unique, counts)
+        cumulative = []
+        total = 0
+        for i in counts:
+            total += i
+            cumulative.append(total)
+        print(cumulative)
+
+        print('max size', self._max_size)
+
+        diff = np.abs(cumulative - self._max_size * np.ones(len(cumulative)))
+        print(diff)
+        print('excess ', abs(self.get_lenght() - self._max_size))
+        if np.min(diff) < abs(self.get_lenght() - self._max_size):
+            print('prune nodes with value below ', np.argmin(diff))
+        else:
+            print('no prune is needed')
 
     def _reset_values(self):
         nodes = self.get_nodes()
@@ -311,23 +341,26 @@ if __name__ == '__main__':
 
     dims = 1
 
-    tree = Exploration_tree(dims, 100)
-    tree.plot()
+    tree = Exploration_tree(dims, 600)
+    # tree.plot()
 
-    for i in [80, 20, 30]:
+    # tree._get_cutoff_value()
+
+    for i in [200]:
         samples = np.abs(0.3 * np.random.standard_normal((i, dims))) % 1
-        print('samples added', len(samples), samples)
+        # print('samples added', len(samples), samples)
         for p in samples:
             p = list(p)
             tree.expand_towards(p)
 
-        tree.plot()
-        print('pruning above', tree._min_level, 'starting size = ', tree._lenght)
-
-        tree.prune()
-
-        print('size after pruning = ', tree._lenght)
-        tree.plot()
+        # tree.plot()
+        # print('pruning above', tree._min_level, 'starting size = ', tree._lenght)
+        #
+        # tree.prune()
+        #
+        # print('size after pruning = ', tree._lenght)
+    # tree.plot()
+    tree._get_cutoff_value()
 
     # print(tree.get_node(np.random.randint(0, high=tree.get_lenght())))
     # tree.plot()
