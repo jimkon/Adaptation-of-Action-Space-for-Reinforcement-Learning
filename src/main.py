@@ -103,9 +103,6 @@ def run(episodes=10000,
     print('Run {} episodes in {} seconds and got {} average reward'.format(
         episodes, time / 1000, reward_sum / episodes))
 
-    for i in range(10000):
-        k = 1
-
     data_fetcher.save()
     action_space_monitor.save()
 

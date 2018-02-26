@@ -347,14 +347,14 @@ if __name__ == '__main__':
     # tree._get_cutoff_value()
 
     for i in [20]:
-        print(i)
-        # samples = np.abs(0.3 * np.random.standard_normal((i, dims))) % 1
-        # # print('samples added', len(samples), samples)
-        # for p in samples:
-        #     p = list(p)
-        #     tree.expand_towards(p)
-        #
-        # tree.prune()
+        # print(i)
+        samples = np.abs(0.3 * np.random.standard_normal((i, dims))) % 1
+        # print('samples added', len(samples), samples)
+        for p in samples:
+            p = list(p)
+            tree.expand_towards(p)
+
+        tree.prune()
 
     # tree.plot()
     # tree._get_cutoff_value()
