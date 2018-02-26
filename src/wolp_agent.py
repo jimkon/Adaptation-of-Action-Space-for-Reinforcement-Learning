@@ -7,12 +7,12 @@ import action_space
 
 class WolpertingerAgent(agent.DDPGAgent):
 
-    def __init__(self, env, max_actions=1e5, k_ratio=0.1, action_space_monitor=None):
+    def __init__(self, env, max_actions=1e5, k_ratio=0.1):
         super().__init__(env)
         self.experiment = env.spec.id
         if self.continious_action_space:
             self.action_space = action_space.Space(
-                self.low, self.high, max_actions, action_space_monitor)
+                self.low, self.high, max_actions)
         else:
             print('This version works only for continuous action space')
             exit()
@@ -57,6 +57,6 @@ class WolpertingerAgent(agent.DDPGAgent):
         result_action = actions[max_index]
         result_index = indexes[max_index]
         # return index to action space module
-        self.action_space.action_selected(result_index, proto_action)
+        self.action_space.action_selected(result_index)
         # return the best action
         return result_action

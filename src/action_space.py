@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from util.data_graph import plot_3d_points
 import action_space_evolution as ev
 import bin_exploration
+import util.action_space_data as data
 
 
 """
@@ -18,7 +19,7 @@ import bin_exploration
 
 class Space:
 
-    def __init__(self, low, high, points, monitor):
+    def __init__(self, low, high, points):
         self._low = np.array(low)
         self._high = np.array(high)
         self._range = self._high - self._low
@@ -32,8 +33,8 @@ class Space:
         self._flann = pyflann.FLANN()
         self.rebuild_flann()
 
-        self.monitor = monitor
-        self.monitor.add_arrays(['space', 'usage', 'lenght', 'actors_action'])
+        self.monitor = data.Action_space_data(low, high, points)
+        self.monitor.store_lenght(self._action_space_module.get_lenght())
 
     def rebuild_flann(self):
         self._index = self._flann.build_index(np.copy(self.__space), algorithm='kdtree')
@@ -41,31 +42,35 @@ class Space:
     def update(self):
         self._flann.delete_index()
 
-        self.monitor.add_to_array('space', self.__space)
-        self.monitor.add_to_array('lenght', len(self.__space))
-
         self._action_space_module.prune()
         self.__space = self._action_space_module.get_points()
-        self.__actions_score = np.zeros(self.__space.shape[0])
+        self.monitor.store_lenght(self._action_space_module.get_lenght())
+
         self.rebuild_flann()
 
     def search_point(self, point, k):
         p_in = self._import_point(point)
-        self.monitor.add_to_array('usage', p_in)
+        self._action_space_module.expand_towards(p_in)
+        self.monitor.store_search_point(p_in)
         indexes, _ = self._flann.nn_index(p_in, k)
+
         knns = self.__space[indexes]
+        self.monitor.store_ndn(knns[0][0])
+
         p_out = []
         for p in knns:
             p_out.append(self._export_point(p))
 
         return np.array(p_out)[0], indexes[0]
 
-    def action_selected(self, actions_index, actors_action):
+    def action_selected(self, actions_index):
         # action selected for actors action and got reward
-        self._action_space_module.expand_towards(self._import_point(actors_action))
-        # node = self._action_space_module.get_node(actions_index)
+        # self._action_space_module.expand_towards(self._import_point(actors_action))
+        node = self._action_space_module.get_node(actions_index)
+
+        self.monitor.store_action(node.get_location())
         # self._action_space_module.expand_towards(node.get_location())
-        self.monitor.add_to_array('actors_action', self._import_point(actors_action))
+        # self.monitor.store_continuous_action(self._import_point(actors_action))
 
     def _import_point(self, point):
         return (point - self._low) / self._range

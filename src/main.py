@@ -10,13 +10,11 @@ from ddpg.agent import DDPGAgent
 from util.data import Data
 from util.data import Timer
 
-AUTO_SAVE_AFTER_EPISODES = 500
-
 
 def run(episodes=10000,
         render=False,
         experiment='InvertedPendulum-v1',
-        max_actions=10000,
+        max_actions=1000,
         knn=0.1):
 
     env = gym.make(experiment)
@@ -26,11 +24,10 @@ def run(episodes=10000,
 
     steps = env.spec.timestep_limit
 
-    action_space_monitor = Data("action_space_" + str(episodes) + '_' + str(max_actions))
-
     # agent = DDPGAgent(env)
-    agent = WolpertingerAgent(env, max_actions=max_actions, k_ratio=knn,
-                              action_space_monitor=action_space_monitor)
+    agent = WolpertingerAgent(env, max_actions=max_actions, k_ratio=knn)
+
+    action_space_monitor = agent.get_action_space().monitor
 
     file_name = "data_" + str(episodes) + '_' + agent.get_name()
     print(file_name)
@@ -98,16 +95,16 @@ def run(episodes=10000,
                                                                                                   reward_sum / (ep + 1)),
                                                                                               agent.get_action_space_size(),
                                                                                               agent.get_action_space_size() / max_actions))
-
-                if ep % AUTO_SAVE_AFTER_EPISODES == AUTO_SAVE_AFTER_EPISODES - 1:
-                    data_fetcher.temp_save()
-                    action_space_monitor.temp_save()
-
+                data_fetcher.temp_save()
+                action_space_monitor.temp_save()
                 break
     # end of episodes
     time = full_epoch_timer.get_time()
     print('Run {} episodes in {} seconds and got {} average reward'.format(
         episodes, time / 1000, reward_sum / episodes))
+
+    for i in range(10000):
+        k = 1
 
     data_fetcher.save()
     action_space_monitor.save()

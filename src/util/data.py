@@ -8,11 +8,17 @@ import os
 
 class Data:
 
+    AUTOSAVE_AFTER = 30000
+
     def __init__(self, name='default_name'):
         self.name = name
         self.data = {}
         self.timers = {}
         self.temp_saves = 0
+        self.temp_save_counter = 0
+
+    def increase_autosave_counter(self, n=1):
+        self.temp_save_counter += n
 
     def _add(self, field_name, timer, timer_one_hot=True):
         if field_name in self.data.keys():
@@ -30,12 +36,19 @@ class Data:
             self.add_array(prefix + f)
 
     def add_to_array(self, field_name, value, abs_name=False):
+        if isinstance(value, (list, tuple, np.ndarray)):
+            increment = len(value)
+        else:
+            increment = 1
+
         if abs_name:
             self.data[field_name] = np.append(self.data[field_name], value)
+            self.increase_autosave_counter(increment)
         else:
             fields = self.get_keys(field_name)
             for f in fields:
                 self.data[f] = np.append(self.data[f], value)
+                self.increase_autosave_counter(increment)
 
     def add_timer(self, field_name, one_hot=True):
         self._add(field_name, True, one_hot)
@@ -62,6 +75,7 @@ class Data:
                 if f in timer_keys:
                     self.data[f] = np.append(self.data[f], self.timers[f].get_time())
 
+        self.increase_autosave_counter()
         self.reset_timers_one_hot()
 
     def reset_field(self, key):
@@ -110,11 +124,17 @@ class Data:
             self.data = pickle.load(f)
 
     def temp_save(self):
+        if self.temp_save_counter < self.AUTOSAVE_AFTER:
+            return
+
         self.save(path='temp/{}_temp{}'.format(self.name, self.temp_saves), final_save=False)
         self.temp_saves += 1
         self.reset_fields()
+        self.temp_save_counter = 0
 
     def save(self, path=None, final_save=True):
+        print('Data: SAVE', self.name)
+
         if path == None:
             path = self.name
 
@@ -125,7 +145,8 @@ class Data:
                 temp_data = Data()
                 temp_data.load(path=temp_file)
                 clone_data.merge(temp_data)
-                os.remove('results/obj/' + temp_file + '.pkl')
+                os.remove(
+                    '/home/jim/Desktop/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/results/obj/' + temp_file + '.pkl')
             clone_data.merge(self)
             self.data = clone_data.data
 
