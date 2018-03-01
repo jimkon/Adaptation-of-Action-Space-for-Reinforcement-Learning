@@ -10,10 +10,11 @@ import util.data
 from util.timer import Timer
 
 
+
 def run(episodes=10000,
         render=False,
         experiment='InvertedPendulum-v1',
-        max_actions=10000,
+        max_actions=1000,
         knn=0.1):
 
     env = gym.make(experiment)
@@ -86,7 +87,9 @@ def run(episodes=10000,
                                                                                               agent.get_action_space_size(),
                                                                                               agent.get_action_space_size() / max_actions))
 
+
                 data.finish_and_store_episode()
+
 
                 break
     # end of episodes

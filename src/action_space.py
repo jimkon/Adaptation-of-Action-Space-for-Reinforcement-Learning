@@ -5,6 +5,7 @@ import pyflann
 import matplotlib.pyplot as plt
 from util.data_process import plot_3d_points
 import bin_exploration
+import util.action_space_data as data
 
 
 """
@@ -43,8 +44,14 @@ class Space:
 
     def search_point(self, point, k):
         p_in = self._import_point(point)
+
+        #self._action_space_module.expand_towards(p_in)
+
         indexes, _ = self._flann.nn_index(p_in, k)
+
         knns = self.__space[indexes]
+        self.monitor.store_ndn(knns[0][0])
+
         p_out = []
         for p in knns:
             p_out.append(self._export_point(p))
@@ -53,12 +60,14 @@ class Space:
             p_out = [p_out]
         return np.array(p_out), indexes[0]
 
-    def action_selected(self, actions_index, actors_action):
+    def action_selected(self, actions_index):
         # action selected for actors action and got reward
-        self._action_space_module.expand_towards(self._import_point(actors_action))
-        # node = self._action_space_module.get_node(actions_index)
+        # self._action_space_module.expand_towards(self._import_point(actors_action))
+        node = self._action_space_module.get_node(actions_index)
+
+        self.monitor.store_action(node.get_location())
         # self._action_space_module.expand_towards(node.get_location())
-        # self.monitor.add_to_array('actors_action', self._import_point(actors_action))
+
 
     def _import_point(self, point):
         return (point - self._low) / self._range

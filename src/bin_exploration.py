@@ -13,49 +13,45 @@ class Node:
 
     def __init__(self, location, radius, parent):
         self._value = 0
-        self._location = location
+        self._location = np.array(location)
         self._radius = radius
-        self._low_limit = (-radius) * np.ones(len(location)) + location
-        self._high_limit = (radius) * np.ones(len(location)) + location
-        self._branches = []
+        self._low_limit = -radius + location
+        self._high_limit = radius + location
+        self._branches = [None] * len(self.BRANCH_MATRIX)
         self._parent = parent
         if parent is not None:
             self._level = parent._level + 1
         else:
             self._level = 0
 
-    def expand(self, full_expansion=True, towards=None):
+    def expand(self, towards_point=None):
         if not self.is_expandable():
-            return None
+            return []
         new_radius = self._radius / 2
 
-        temp_branches = []
-        for mat in self.BRANCH_MATRIX:
-            new_location = self._location + mat * new_radius
+        new_nodes = []
+        for i in range(len(self.BRANCH_MATRIX)):
+            if self._branches[i] is not None:
+                continue
+
+            new_location = self._location + self.BRANCH_MATRIX[i] * new_radius
+
             new_node = Node(new_location, new_radius, self)
-            for node in self._branches:
-                if node._equals(new_node):
-                    continue
-            temp_branches.append(new_node)
+            if (towards_point is not None) and (not new_node._covers_point(towards_point)):
+                continue
+            self._branches[i] = new_node
+            new_nodes.append(new_node)
 
-        if (not full_expansion) and (towards is not None):
-            for node in temp_branches:
-                if node._covers_point(towards):
-                    self._branches.append(node)
-                    break
-        else:
-            self._branches = temp_branches
-
-        return self._branches
+        return new_nodes
 
     def search(self, point, increase=True):
         if not self._covers_point(point):
             return None
         if increase:
             self.increase_value()
-        if self.is_leaf():
+        if self.is_leaf() or np.array_equal(self.get_location(), point):
             return self
-        for branch in self._branches:
+        for branch in self.get_branches():
             res = branch.search(point, increase)
             if res is not None:
                 return res
@@ -66,32 +62,21 @@ class Node:
         if self.is_leaf():
             return
 
-        to_remove = []
-        for node in self._branches:
+        for i in range(len(self._branches)):
+            node = self._branches[i]
+            if node is None:
+                continue
             if node.get_value() <= value_threshold and node.get_level() > min_level:
-                to_remove.append(node)
+                self._branches[i] = None
+            else:
+                node.recursive_pruning(min_level, value_threshold)
 
-        for node in to_remove:
-            self._branches.remove(node)
-
-        for node in self._branches:
-            node.recursive_pruning(min_level, value_threshold)
-
-        # needs_pruning = self._level >= min_level and self._value <= value_threshold
-        # if needs_pruning:
-        #     self._branches = []
-        # else:
-        #     for branch in self._branches:
-        #         branch.recursive_pruning(min_level, value_threshold)
-
-    def collect_sub_branches(self):
-        if self.is_leaf():
-            return [self]
-        else:
-            result = [self]
-            for branch in self._branches:
-                result.extend(branch.collect_sub_branches())
-            return result
+    def recursive_collection(self, result_array, func, cond_func=(lambda node: True)):
+        if not cond_func(self):
+            return
+        result_array.append(func(self))
+        for branch in self.get_branches():
+            branch.recursive_collection(result_array, func)
 
     def get_value(self):
         return self._value
@@ -111,11 +96,18 @@ class Node:
 
         return self._parent._location, self._location
 
+    def get_branches(self):
+        res = []
+        for branch in self._branches:
+            if branch is not None:
+                res.append(branch)
+        return res
+
     def is_leaf(self):
-        return len(self._branches) == 0
+        return len(self.get_branches()) == 0
 
     def is_expandable(self):
-        return len(self._branches) < len(self.BRANCH_MATRIX)
+        return len(self.get_branches()) < len(self.BRANCH_MATRIX)
 
     def increase_value(self):
         self._value += 1
@@ -130,11 +122,12 @@ class Node:
         return np.array_equal(self.get_location(), node.get_location())
 
     def __str__(self):
-        return 'loc={} level={} r={} br={} v={}'.format(self._location,
-                                                        self._level,
-                                                        self._radius,
-                                                        len(self._branches),
-                                                        self._value)
+        return 'loc={} level={} r={} br={} v={} parent_loc={}'.format(self._location,
+                                                                      self._level,
+                                                                      self._radius,
+                                                                      len(self.get_branches()),
+                                                                      self._value,
+                                                                      self._parent.get_location() if self._parent is not None else None)
 
     __repr__ = __str__
 
@@ -154,25 +147,38 @@ class Node:
         Node.BRANCH_MATRIX = space.init_uniform_space(low, high, n)
 
 
+"""
+
+
+
+
+
+
+
+
+
+
+
+"""
+
+
 class Exploration_tree:
 
-    FULL_EXPANSION = True
     EXPANSION_VALUE_THRESHOLD = 1
-    AUTOPRUNE_PERCENTAGE = .8
-    INIT_TO_MAX_ACTIONS_RATIO = .01
+    INIT_TO_AVG_ACTIONS_RATIO = .1
 
-    def __init__(self, dims, max_nodes, autoprune=False):
-        self._max_size = max_nodes
+    def __init__(self, dims, avg_nodes, autoprune=True):
+        self._desirable_size = avg_nodes
         self._autoprune = autoprune
         self._dimensions = dims
+        Node._init_branch_matrix(self._dimensions)
+
         self._branch_factor = self._dimensions * 2
         root = Node(np.ones(dims) * 0.5, 0.5, None)
         self._nodes = [root]
-        self._lenght = 1
         self._root = root
-        Node._init_branch_matrix(self._dimensions)
 
-        init_actions = int(max(5, self._max_size * self.INIT_TO_MAX_ACTIONS_RATIO))
+        init_actions = int(max(5, self._desirable_size * self.INIT_TO_AVG_ACTIONS_RATIO))
 
         self._min_level = self.compute_level(init_actions, self._branch_factor)
         self._add_layers(self._min_level)
@@ -184,16 +190,21 @@ class Exploration_tree:
             self._dimensions, point)
 
         node = self.search_nearest_node(point, increase=True)
-        if (node is not None) and self.get_lenght() < self._max_size:
-            self._expand_node(node,
-                              towards=point)
+        if (node is not None):
+            self._expand_node(node, towards_point=point)
 
     def prune(self, value_threshold=0):
-        if self._autoprune and (self.get_lenght() / self._max_size < self.AUTOPRUNE_PERCENTAGE):
+        value_threshold, expected_new_size = self._get_cutoff_value()
+        if value_threshold == -1:
             return
+
         self._root.recursive_pruning(self._min_level, value_threshold)
-        self._nodes = self._root.collect_sub_branches()
-        self._lenght = len(self._nodes)
+
+        self._nodes = self.recursive_traversal(lambda node: node)
+
+        assert len(self._nodes) == expected_new_size, """Size after prune is not the expected: {} != {}
+                        """.format(len(self._nodes), expected_new_size)
+
         self._reset_values()
 
     def search_nearest_node(self, point, increase=True):
@@ -202,25 +213,48 @@ class Exploration_tree:
 
     def get_node(self, index):
         node = self.get_nodes()[index]
-        self.expand_towards(node.get_location())
         return node
-        # return self.search_nearest_node(node.get_location())
 
-    def _expand_node(self, node, towards=None):
+    def recursive_traversal(self, func):
+        res = []
+        self._root.recursive_collection(res, func)
+        return res
+
+    def _expand_node(self, node, towards_point=None):
         if node.get_level() > self._min_level and node.get_value() < self.EXPANSION_VALUE_THRESHOLD:
             return
 
-        new_nodes = node.expand(self.FULL_EXPANSION, towards)
-        if new_nodes is None:
-            return
-        else:
-            self._nodes.extend(new_nodes)
-            self._lenght += len(new_nodes)
+        new_nodes = node.expand(towards_point)
+
+        for new_node in new_nodes:
+            self._nodes.append(new_node)
+
+    def _get_cutoff_value(self):
+        excess = self.get_lenght() - self._desirable_size
+        if excess < 0:
+            return -1, self.get_lenght()
+        values = self.recursive_traversal(
+            lambda node: node.get_value() if node.get_level() > self._min_level else -1)
+
+        unique, counts = np.unique(values, return_counts=True)
+        counts[0] = 0  # drop the -1
+        cumulative = []
+        total = 0
+        for i in counts:
+            total += i
+            cumulative.append(total)
+
+        diff = np.array(cumulative)
+        new_size = self.get_lenght() - diff
+        diff_from_pref_size = np.abs(new_size - self._desirable_size)
+
+        argmin = np.argmin(diff_from_pref_size)
+        res_value = unique[argmin]
+
+        return res_value, new_size[argmin]
 
     def _reset_values(self):
-        nodes = self.get_nodes()
-        for node in nodes:
-            node.reset_value()
+        self.recursive_traversal(lambda node: node.reset_value())
 
     def _add_layers(self, n):
         for i in range(n):
@@ -242,10 +276,16 @@ class Exploration_tree:
         return np.array(result)
 
     def get_lenght(self):
-        return self._lenght
+        return len(self._nodes)
 
     def get_max_lenght(self):
-        return self._max_size
+        return self._desirable_size
+
+    def print_all_nodes(self):
+        nodes = self._nodes
+        print('tree contains', len(nodes), 'nodes, min level=', self._min_level)
+        for node in nodes:
+            print(node)
 
     SAVE_ID = 0
 
@@ -255,7 +295,6 @@ class Exploration_tree:
         plt.grid(True)
         print('nodes to plot:', len(nodes))
         for node in nodes:
-            # print(node)
             parent, child = node.get_connection_with_parent()
             r = 0
             b = 0
@@ -306,30 +345,46 @@ class Exploration_tree:
 if __name__ == '__main__':
 
     dims = 1
+    tree_size = 1000
+    iterations = 1000
+    max_size = 1000
 
-    tree = Exploration_tree(dims, 10)
-    tree.plot(save=True, path='/home/jim/Desktop/dip/notes/bin exploration/series/')
+    tree = Exploration_tree(dims, tree_size)
 
-    tree.expand_towards([0.125])
-    tree.expand_towards([0.125])
-    tree.plot(save=True, path='/home/jim/Desktop/dip/notes/bin exploration/series/')
+    samples_size_buffer = np.random.random(iterations) * max_size
+    samples_size_buffer = samples_size_buffer.astype(int)
 
-    # for i in [2, 20, 30]:
-    #     samples = np.abs(0.3 * np.random.standard_normal((i, dims))) % 1
-    #     print('samples added', len(samples), samples)
-    #     for p in samples:
-    #         p = list(p)
-    #         tree.expand_towards(p)
-    #
-    #     tree.plot()
-    #     print('pruning above', tree._min_level, 'starting size = ', tree._lenght)
-    #
-    #     tree.prune()
-    #
-    #     print('size after pruning = ', tree._lenght)
-    #     tree.plot()
+    min_tree_size = []
+    max_tree_size = []
+    size = []
+    count = 0
+    for i in samples_size_buffer:
+        print(count, '----new iteration, searches', i)
+        count += 1
+        samples = np.abs(np.random.standard_normal((i, dims)))
+        min_tree_size.append(tree.get_lenght())
+        size.append(tree.get_lenght())
+        for p in samples:
+            p = list(p)
+            tree.expand_towards(p)
 
-    # print(tree.get_node(np.random.randint(0, high=tree.get_lenght())))
-    # tree.plot()
-    # tree.prune()
-    # tree.plot()
+        max_tree_size.append(tree.get_lenght())
+        size.append(tree.get_lenght())
+        tree.prune()
+
+    print('size\n', size)
+    x = np.arange(len(size))
+    plt.plot(x, size)
+    s_max = np.max(size)
+    plt.plot([x[0], x[len(x) - 1]], [s_max, s_max],
+             label='max {}'.format(s_max))
+    s_min = np.min(size[50:])
+    plt.plot([x[0], x[len(x) - 1]], [s_min, s_min],
+             label='min {}'.format(s_min))
+    avg = np.average(size)
+
+    plt.plot([x[0], x[len(x) - 1]], [avg, avg],
+             label='avg {}'.format(avg))
+    plt.legend()
+    plt.grid(True)
+    plt.show()

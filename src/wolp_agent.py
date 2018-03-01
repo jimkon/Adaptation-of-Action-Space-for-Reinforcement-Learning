@@ -7,7 +7,7 @@ import action_space
 
 class WolpertingerAgent(agent.DDPGAgent):
 
-    def __init__(self, env, max_actions=1e5, k_ratio=0.1, action_space_monitor=None):
+    def __init__(self, env, max_actions=1e5, k_ratio=0.1):
         super().__init__(env)
         self.experiment = env.spec.id
         if self.continious_action_space:
@@ -55,6 +55,6 @@ class WolpertingerAgent(agent.DDPGAgent):
         result_action = actions[max_index]
         result_index = -1  # indexes[max_index]
         # return index to action space module
-        self.action_space.action_selected(result_index, proto_action)
+        self.action_space.action_selected(result_index)
         # return the best action
         return result_action

@@ -159,6 +159,7 @@ class Data:
     def set_data(self, data):
         self.data = data
 
+
     def save(self, path='', final_save=True):
         if final_save and self.temp_saves > 0:
             if self.data_added > 0:
@@ -166,6 +167,7 @@ class Data:
                 self.temp_save()
             print('Data: Merging all temporary files')
             for i in range(self.temp_saves):
+
                 file_name = '{}temp/{}{}.json'.format(self.PATH,
                                                       i,
                                                       self.get_file_name())
