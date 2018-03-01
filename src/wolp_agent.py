@@ -39,7 +39,12 @@ class WolpertingerAgent(agent.DDPGAgent):
     def observe(self, episode):
         super().observe(episode)
         if episode['done'] == 1:
+            min_action_space_size = self.action_space.get_size()
+
             self.action_space.update()
+
+            max_action_space_size = self.action_space.get_size()
+            self.data_fetch.set_action_space_size(min_action_space_size, max_action_space_size)
 
     def wolp_action(self, state, proto_action):
         # get the proto_action's k nearest neighbors

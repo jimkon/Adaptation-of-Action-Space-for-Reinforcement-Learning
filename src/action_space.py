@@ -37,6 +37,7 @@ class Space:
         self._flann.delete_index()
 
         self._action_space_module.prune()
+
         self.__space = self._action_space_module.get_points()
 
         self.rebuild_flann()
@@ -44,7 +45,7 @@ class Space:
     def search_point(self, point, k):
         p_in = self._import_point(point)
 
-        # self._action_space_module.expand_towards(p_in)
+        self._action_space_module.expand_towards(p_in)
 
         indexes, _ = self._flann.nn_index(p_in, k)
 
