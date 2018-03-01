@@ -65,7 +65,7 @@ class Data_handler:
         result = []
         for i in self.episodes:
             data = i[field]
-            if isinstance(data, list) and isinstance(data[0], list):
+            if isinstance(data, list) and len(data)>0 and isinstance(data[0], list):
                 result.extend(data)
             else:
                 result.append(data)
