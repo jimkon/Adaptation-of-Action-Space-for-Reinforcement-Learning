@@ -2,10 +2,8 @@ import numpy as np
 import itertools
 import pyflann
 
-import util.my_plotlib as mplt
 import matplotlib.pyplot as plt
-from util.data_graph import plot_3d_points
-import action_space_evolution as ev
+from util.data_process import plot_3d_points
 import bin_exploration
 import util.action_space_data as data
 
@@ -33,9 +31,6 @@ class Space:
         self._flann = pyflann.FLANN()
         self.rebuild_flann()
 
-        self.monitor = data.Action_space_data(low, high, points)
-        self.monitor.store_lenght(self._action_space_module.get_lenght())
-
     def rebuild_flann(self):
         self._index = self._flann.build_index(np.copy(self.__space), algorithm='kdtree')
 
@@ -44,14 +39,14 @@ class Space:
 
         self._action_space_module.prune()
         self.__space = self._action_space_module.get_points()
-        self.monitor.store_lenght(self._action_space_module.get_lenght())
 
         self.rebuild_flann()
 
     def search_point(self, point, k):
         p_in = self._import_point(point)
-        self._action_space_module.expand_towards(p_in)
-        self.monitor.store_search_point(p_in)
+
+        #self._action_space_module.expand_towards(p_in)
+
         indexes, _ = self._flann.nn_index(p_in, k)
 
         knns = self.__space[indexes]
@@ -61,7 +56,9 @@ class Space:
         for p in knns:
             p_out.append(self._export_point(p))
 
-        return np.array(p_out)[0], indexes[0]
+        if k == 1:
+            p_out = [p_out]
+        return np.array(p_out), indexes[0]
 
     def action_selected(self, actions_index):
         # action selected for actors action and got reward
@@ -70,7 +67,7 @@ class Space:
 
         self.monitor.store_action(node.get_location())
         # self._action_space_module.expand_towards(node.get_location())
-        # self.monitor.store_continuous_action(self._import_point(actors_action))
+
 
     def _import_point(self, point):
         return (point - self._low) / self._range
@@ -110,16 +107,15 @@ class Space:
                 space = np.append(space, additional_points, axis=0)
 
         if dims == 1:
-            plt.grid(True)
             for x in space:
-                plt.plot(x, [0], 'b1')
+                plt.plot([x], [0], 'o')
+
             plt.show()
         elif dims == 2:
-            lines = []
             for x, y in space:
-                lines.append(mplt.Line([x], [y], line_color='o'))
+                plt.plot([x], [y], 'o')
 
-            mplt.plot_lines(lines, labels=False)
+            plt.show()
         else:
             plot_3d_points(space)
 

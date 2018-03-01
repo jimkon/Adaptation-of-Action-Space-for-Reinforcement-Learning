@@ -1,14 +1,14 @@
-#!/usr/bin/python3
+# !/usr/bin/python3
+
 import gym
 
 import numpy as np
 
-from util import *
-
 from wolp_agent import *
 from ddpg.agent import DDPGAgent
-from util.data import Data
-from util.data import Timer
+import util.data
+from util.timer import Timer
+
 
 
 def run(episodes=10000,
@@ -27,28 +27,21 @@ def run(episodes=10000,
     # agent = DDPGAgent(env)
     agent = WolpertingerAgent(env, max_actions=max_actions, k_ratio=knn)
 
-    action_space_monitor = agent.get_action_space().monitor
-
-    file_name = "data_" + str(episodes) + '_' + agent.get_name()
-    print(file_name)
-
-    data_fetcher = Data(file_name)
-
-    data_fetcher.add_arrays(['experiment', 'max_actions', 'action_space',
-                             'rewards', 'count', 'actions', 'done'])
-    data_fetcher.add_arrays(['state_' + str(i) for i in range(agent.observation_space_size)])
-
-    agent.add_data_fetch(data_fetcher)
-
-    data_fetcher.add_to_array('experiment', experiment)
-    data_fetcher.add_to_array('max_actions', max_actions)
-    data_fetcher.add_to_array('action_space', agent.get_action_space())
-
     timer = Timer()
+
+    data = util.data.Data()
+    data.set_agent(agent.get_name(), int(agent.action_space.get_number_of_actions()),
+                   agent.k_nearest_neighbors, 4)
+    data.set_experiment(experiment, agent.low.tolist(), agent.high.tolist(), episodes)
+
+    agent.add_data_fetch(data)
+    print(data.get_file_name())
+
     full_epoch_timer = Timer()
     reward_sum = 0
 
     for ep in range(episodes):
+
         timer.reset()
         observation = env.reset()
 
@@ -56,19 +49,19 @@ def run(episodes=10000,
         print('Episode ', ep, '/', episodes - 1, 'started...', end='')
         for t in range(steps):
 
-            data_fetcher.reset_timers()
-
             if render:
                 env.render()
 
             action = agent.act(observation)
 
-            data_fetcher.add_to_array('actions', action)  # -------
+            data.set_action(action.tolist())
 
-            for i in range(agent.observation_space_size):
-                data_fetcher.add_to_array('state_' + str(i), observation[i])
+            data.set_state(observation.tolist())
+
             prev_observation = observation
-            observation, reward, done, info = env.step(action)
+            observation, reward, done, info = env.step(action[0] if len(action) == 1 else action)
+
+            data.set_reward(reward)
 
             episode = {'obs': prev_observation,
                        'action': action,
@@ -80,11 +73,9 @@ def run(episodes=10000,
             agent.observe(episode)
 
             total_reward += reward
-            data_fetcher.add_to_array('done', 1 if done else 0)
 
             if done or (t == steps - 1):
                 t += 1
-                data_fetcher.add_to_array('rewards', total_reward)  # ------
                 reward_sum += total_reward
                 time_passed = timer.get_time()
                 print('Reward:{} Steps:{} t:{} ({}/step) Cur avg={} ,{} actions(r={})'.format(total_reward, t,
@@ -95,16 +86,18 @@ def run(episodes=10000,
                                                                                                   reward_sum / (ep + 1)),
                                                                                               agent.get_action_space_size(),
                                                                                               agent.get_action_space_size() / max_actions))
-                data_fetcher.temp_save()
-                action_space_monitor.temp_save()
+
+
+                data.finish_and_store_episode()
+
+
                 break
     # end of episodes
     time = full_epoch_timer.get_time()
     print('Run {} episodes in {} seconds and got {} average reward'.format(
         episodes, time / 1000, reward_sum / episodes))
 
-    data_fetcher.save()
-    action_space_monitor.save()
+    data.save()
 
 
 if __name__ == '__main__':
