@@ -67,7 +67,7 @@ class Data_handler:
             data = i[field]
             if len(data) == 0:
                 continue
-            if isinstance(data, list)and isinstance(data[0], list):
+            if isinstance(data, list) and isinstance(data[0], list):
                 result.extend(data)
             else:
                 result.append(data)
@@ -216,6 +216,26 @@ class Data_handler:
         plt.plot([0, len(ndn)], [mean_expected_error] * 2,
                  label='mean expected error={}'.format(mean_expected_error))
 
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+    def plot_action_space_size(self):
+        min_max = self.get_episode_data("action_space_sizes")
+        size = np.array(min_max).flatten()
+
+        x = np.arange(len(size))
+        plt.plot(x, size, '--')
+        s_max = np.max(size)
+        plt.plot([x[0], x[len(x) - 1]], [s_max, s_max], 'r',
+                 label='max {}'.format(s_max))
+        s_min = np.min(size[50:])
+        plt.plot([x[0], x[len(x) - 1]], [s_min, s_min], 'b',
+                 label='min {}'.format(s_min))
+        avg = average_timeline(size)
+
+        plt.plot(x, avg, 'g',
+                 label='avg {}'.format(avg[len(avg) - 1]))
         plt.legend()
         plt.grid(True)
         plt.show()
