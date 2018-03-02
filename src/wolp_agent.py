@@ -58,7 +58,7 @@ class WolpertingerAgent(agent.DDPGAgent):
         # find the pair with the maximum value
         max_index = np.argmax(actions_evaluation)
         result_action = actions[max_index]
-        result_index = -1  # indexes[max_index]
+        result_index = indexes[max_index]
         # return index to action space module
         self.action_space.action_selected(result_index)
         # return the best action
