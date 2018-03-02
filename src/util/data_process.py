@@ -19,6 +19,8 @@ def average_timeline(x):
 def apply_func_to_window(data, window_size, func):
     data_lenght = len(data)
     window_size = min(window_size, data_lenght)
+    if window_size == 0:
+        window_size = (data_lenght * .1)
     res = []
     for i in range(data_lenght):
         start = int(max(i - window_size / 2, 0))
@@ -144,7 +146,6 @@ class Data_handler:
         plt.plot(avg, label='average: {}'.format(avg[len(avg) - 1]))
 
         adaption_time = self.get_adaption_episode()
-        print(adaption_time)
         plt.plot(adaption_time, avg[adaption_time], 'bo',
                  label='adaption time: {}'.format(adaption_time))
 
@@ -157,6 +158,8 @@ class Data_handler:
         plt.plot(argmax + adaption_time, avg_ignore_adaption[argmax], 'ro',
                  label='max: {}'.format(avg_ignore_adaption[argmax]))
 
+        plt.ylabel("Reward")
+        plt.xlabel("Episode")
         plt.legend()
         plt.grid(True)
         plt.show()
@@ -175,6 +178,9 @@ class Data_handler:
                  label=['{} actions'.format(len(picked_actions)),
                         'continuous actions'])
 
+        plt.ylabel("logN")
+        plt.xlabel("Action space")
+        plt.yscale("log")
         plt.legend()
         plt.grid(True)
         plt.show()
@@ -184,15 +190,20 @@ class Data_handler:
                    ) == 1, 'This function works only for 1-dimensional action space'
         picked_actions = np.array(self.get_episode_data('actions'))
         batches = break_into_batches(picked_actions, number_of_batches)
+        low = self.data.data['experiment']['actions_low'][0]
+        high = self.data.data['experiment']['actions_high'][0]
         res = []
         count = 0
         for batch in batches:
-            hist, bins = np.histogram(batch, bins=np.linspace(0, 1, n_bins))
+            hist, bins = np.histogram(batch, bins=np.linspace(low, high, n_bins))
             count += 1
             plt.plot(bins[1:], hist, linewidth=1, label='t={}%'.format(
                 100 * count / number_of_batches))
             # plt.hist(batch, bins=30, histtype='stepfilled', label=str(count))
 
+        plt.ylabel("logN")
+        plt.xlabel("Action space")
+        plt.yscale("log")
         plt.legend()
         plt.grid(True)
         plt.show()
@@ -216,6 +227,8 @@ class Data_handler:
         plt.plot([0, len(ndn)], [mean_expected_error] * 2,
                  label='mean expected error={}'.format(mean_expected_error))
 
+        plt.ylabel("Error")
+        plt.xlabel("Episode")
         plt.legend()
         plt.grid(True)
         plt.show()
@@ -224,18 +237,25 @@ class Data_handler:
         min_max = self.get_episode_data("action_space_sizes")
         size = np.array(min_max).flatten()
 
+        # grad = np.gradient(size)
+        # adaption_point = np.where(grad < 0)[0][0]
+
         x = np.arange(len(size))
         plt.plot(x, size, '--')
-        s_max = np.max(size)
-        plt.plot([x[0], x[len(x) - 1]], [s_max, s_max], 'r',
-                 label='max {}'.format(s_max))
-        s_min = np.min(size[50:])
-        plt.plot([x[0], x[len(x) - 1]], [s_min, s_min], 'b',
-                 label='min {}'.format(s_min))
-        avg = average_timeline(size)
 
+        s_max = average_timeline(apply_func_to_window(size, 0, np.max))
+        plt.plot(x, s_max, 'r',
+                 label='max {}'.format(s_max[len(s_max) - 1]))
+        avg = average_timeline(size)
         plt.plot(x, avg, 'g',
                  label='avg {}'.format(avg[len(avg) - 1]))
+
+        s_min = average_timeline(apply_func_to_window(size, 0, np.min))
+        plt.plot(x, s_min, 'b',
+                 label='min {}'.format(s_min[len(s_min) - 1]))
+
+        plt.ylabel("Size")
+        plt.xlabel("Episode")
         plt.legend()
         plt.grid(True)
         plt.show()
