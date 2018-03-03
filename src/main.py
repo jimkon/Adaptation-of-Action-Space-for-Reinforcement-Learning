@@ -10,7 +10,6 @@ import util.data
 from util.timer import Timer
 
 
-
 def run(episodes=1000,
         render=True,
         experiment='InvertedPendulum-v1',
@@ -85,9 +84,7 @@ def run(episodes=1000,
                                                                             round(
                                                                                 reward_sum / (ep + 1))))
 
-
                 data.finish_and_store_episode()
-
 
                 break
     # end of episodes
