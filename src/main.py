@@ -11,8 +11,8 @@ from util.timer import Timer
 
 
 
-def run(episodes=10000,
-        render=False,
+def run(episodes=1000,
+        render=True,
         experiment='InvertedPendulum-v1',
         max_actions=1000,
         knn=0.1):
@@ -24,8 +24,8 @@ def run(episodes=10000,
 
     steps = env.spec.timestep_limit
 
-    # agent = DDPGAgent(env)
-    agent = WolpertingerAgent(env, max_actions=max_actions, k_ratio=knn)
+    agent = DDPGAgent(env)
+    #agent = WolpertingerAgent(env, max_actions=max_actions, k_ratio=knn)
 
     timer = Timer()
 
@@ -78,14 +78,12 @@ def run(episodes=10000,
                 t += 1
                 reward_sum += total_reward
                 time_passed = timer.get_time()
-                print('Reward:{} Steps:{} t:{} ({}/step) Cur avg={} ,{} actions(r={})'.format(total_reward, t,
-                                                                                              time_passed,
-                                                                                              round(
-                                                                                                  time_passed / t),
-                                                                                              round(
-                                                                                                  reward_sum / (ep + 1)),
-                                                                                              agent.get_action_space_size(),
-                                                                                              agent.get_action_space_size() / max_actions))
+                print('Reward:{} Steps:{} t:{} ({}/step) Cur avg={}'.format(total_reward, t,
+                                                                            time_passed,
+                                                                            round(
+                                                                                time_passed / t),
+                                                                            round(
+                                                                                reward_sum / (ep + 1))))
 
 
                 data.finish_and_store_episode()
