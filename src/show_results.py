@@ -3,14 +3,13 @@ import numpy as np
 from util.data_process import *
 
 
-def show():
-    folder = '/'
-    episodes = 2500
-    actions = 7
-    k = 1
-    experiment = 'InvertedPendulum-v1'
-    v = 4
-    id = 0
+def show(folder='saved/',
+         episodes=2500,
+         actions=7,
+         k=1,
+         experiment='InvertedPendulum-v1',
+         v=4,
+         id=0):
 
     name = '/home/jim/Desktop/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/results/obj/{}data_{}_Wolp{}_{}{}k{}#{}.json.zip'.format(folder,
                                                                                                                                                  episodes,
@@ -30,7 +29,10 @@ def show():
     data_process.plot_action_distribution()
     data_process.plot_action_distribution_over_time()
     data_process.plot_action_error()
+    data_process.plot_action_space_size()
 
 
 if __name__ == '__main__':
-    show()
+    show(folder='/', episodes=10000, actions=127, k=12,
+         experiment='InvertedPendulum-v1', v=4, id=0)
+    # show()
