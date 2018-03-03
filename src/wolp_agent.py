@@ -7,19 +7,17 @@ import action_space
 
 class WolpertingerAgent(agent.DDPGAgent):
 
-    def __init__(self, env, max_actions=1e5, k_ratio=0.1, action_space_monitor=None):
+    def __init__(self, env, max_actions=1e5, k_ratio=0.1):
         super().__init__(env)
         self.experiment = env.spec.id
         if self.continious_action_space:
-            self.action_space = action_space.Space(
-                self.low, self.high, max_actions, action_space_monitor)
+            self.action_space = action_space.Space(self.low, self.high, max_actions)
+            max_actions = self.action_space.get_number_of_actions()
         else:
-            print('This version works only for continuous action space')
+            print("this version doesn't work for discrete actions spaces")
             exit()
 
-        self.k_nearest_neighbors = int(
-            min(max_actions * k_ratio, self.action_space.get_number_of_actions()))
-        print('knn', self.k_nearest_neighbors)
+        self.k_nearest_neighbors = max(1, int(max_actions * k_ratio))
 
     def get_name(self):
         return 'Wolp4_{}k{}_{}'.format(self.action_space.get_max_size(),
@@ -34,8 +32,6 @@ class WolpertingerAgent(agent.DDPGAgent):
     def act(self, state):
         # taking a continuous action from the actor
         proto_action = super().act(state)
-        if self.k_nearest_neighbors < 1:
-            return proto_action
 
         # return the best neighbor of the proto action
         return self.wolp_action(state, proto_action)
@@ -48,6 +44,8 @@ class WolpertingerAgent(agent.DDPGAgent):
     def wolp_action(self, state, proto_action):
         # get the proto_action's k nearest neighbors
         actions, indexes = self.action_space.search_point(proto_action, self.k_nearest_neighbors)
+        actions = actions[0]
+        self.data_fetch.set_ndn_action(actions[0].tolist())
         # make all the state-action pairs for the critic
         states = np.tile(state, [len(actions), 1])
         # evaluate each pair through the critic
@@ -55,8 +53,8 @@ class WolpertingerAgent(agent.DDPGAgent):
         # find the pair with the maximum value
         max_index = np.argmax(actions_evaluation)
         result_action = actions[max_index]
-        result_index = indexes[max_index]
+        result_index = -1  # indexes[max_index]
         # return index to action space module
-        self.action_space.action_selected(result_index, proto_action)
+        self.action_space.action_selected(result_index)
         # return the best action
         return result_action
