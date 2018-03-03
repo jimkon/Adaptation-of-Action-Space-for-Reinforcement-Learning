@@ -13,7 +13,7 @@ from util.timer import Timer
 def run(episodes=10000,
         render=False,
         experiment='InvertedPendulum-v1',
-        max_actions=2000,
+        max_actions=1000,
         knn=0.1):
 
     env = gym.make(experiment)
@@ -29,7 +29,7 @@ def run(episodes=10000,
     timer = Timer()
 
     data = util.data.Data()
-    data.set_agent(agent.get_name(), int(agent.action_space.get_number_of_actions()),
+    data.set_agent(agent.get_name(), int(agent.action_space.get_size()),
                    agent.k_nearest_neighbors, 4)
     data.set_experiment(experiment, agent.low.tolist(), agent.high.tolist(), episodes)
 

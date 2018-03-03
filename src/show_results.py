@@ -24,8 +24,8 @@ def show(folder='saved/',
 
     print("Data file is loaded")
 
-    # data_process.plot_rewards()
-    # data_process.plot_average_reward()
+    data_process.plot_rewards()
+    data_process.plot_average_reward()
     data_process.plot_action_distribution()
     data_process.plot_action_distribution_over_time()
     data_process.plot_action_error()
@@ -33,6 +33,6 @@ def show(folder='saved/',
 
 
 if __name__ == '__main__':
-    show(folder='/', episodes=10000, actions=255, k=25,
+    show(folder='/', episodes=10000, actions=127, k=12,
          experiment='InvertedPendulum-v1', v=4, id=0)
     # show()
