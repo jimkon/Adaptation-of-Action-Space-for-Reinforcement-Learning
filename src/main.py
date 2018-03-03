@@ -1,9 +1,6 @@
 #!/usr/bin/python3
 
 import gym
-import inspect
-print(inspect.getmodule(gym))
-exit()
 
 import numpy as np
 
