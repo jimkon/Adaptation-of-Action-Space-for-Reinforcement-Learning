@@ -20,7 +20,7 @@ class WolpertingerAgent(agent.DDPGAgent):
         self.k_nearest_neighbors = max(1, int(max_actions * k_ratio))
 
     def get_name(self):
-        return 'Wolp4_{}k{}_{}'.format(self.action_space.get_max_size(),
+        return 'Wolp4_{}k{}_{}'.format(self.action_space.get_size(),
                                        self.k_nearest_neighbors, self.experiment)
 
     def get_action_space(self):
@@ -39,7 +39,12 @@ class WolpertingerAgent(agent.DDPGAgent):
     def observe(self, episode):
         super().observe(episode)
         if episode['done'] == 1:
+            min_action_space_size = self.action_space.get_size()
+
             self.action_space.update()
+
+            max_action_space_size = self.action_space.get_size()
+            self.data_fetch.set_action_space_size(min_action_space_size, max_action_space_size)
 
     def wolp_action(self, state, proto_action):
         # get the proto_action's k nearest neighbors
@@ -53,7 +58,7 @@ class WolpertingerAgent(agent.DDPGAgent):
         # find the pair with the maximum value
         max_index = np.argmax(actions_evaluation)
         result_action = actions[max_index]
-        result_index = -1  # indexes[max_index]
+        result_index = indexes[max_index]
         # return index to action space module
         self.action_space.action_selected(result_index)
         # return the best action
