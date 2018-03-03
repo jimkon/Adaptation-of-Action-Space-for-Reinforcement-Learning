@@ -20,7 +20,7 @@ class WolpertingerAgent(agent.DDPGAgent):
         self.k_nearest_neighbors = max(1, int(max_actions * k_ratio))
 
     def get_name(self):
-        return 'Wolp4_{}k{}_{}'.format(self.action_space.get_max_size(),
+        return 'Wolp4_{}k{}_{}'.format(self.action_space.get_size(),
                                        self.k_nearest_neighbors, self.experiment)
 
     def get_action_space(self):

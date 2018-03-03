@@ -1,6 +1,9 @@
 #!/usr/bin/python3
 
 import gym
+import inspect
+print(inspect.getmodule(gym))
+exit()
 
 import numpy as np
 
@@ -58,7 +61,9 @@ def run(episodes=10000,
             data.set_state(observation.tolist())
 
             prev_observation = observation
-            observation, reward, done, info = env.step(action[0] if len(action) == 1 else action)
+            # some environments need the action as scalar valua, and other as array
+            # for scalar: action[0] if len(action) == 1 else action
+            observation, reward, done, info = env.step(action if len(action) == 1 else action)
 
             data.set_reward(reward)
 
