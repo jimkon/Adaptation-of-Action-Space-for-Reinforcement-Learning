@@ -32,12 +32,15 @@ class State_sequence:
         if len(self._sequence) == 0:
             return np.zeros(self.state_size)
 
-        index, distance = self._flann.nn_index(state, 1)
+        index, distance = self._flann.nn_index(state, 2)
 
         if distance[0] < self.STATE_REACHED_DISTANCE:
             return self._sequence[index[0]]
         else:
-            return self._sequence[index[0] + 1]  # not final check if out of bounds of list
+            if index == len(self._sequence):
+                return self._sequence[index[1]]
+            else:
+                return self._sequence[index[0] + 1]
 
     def _reset_current_sequence(self):
         self._current_sequence = []
