@@ -6,6 +6,8 @@ from util import *
 import gym
 from gym.spaces import Box, Discrete
 
+from optimal_state_sequence import State_sequence
+
 from la_actor_net import ActorNet
 from critic_net import CriticNet
 from actor_net_bn import ActorNet_bn
@@ -89,6 +91,8 @@ class DDPGAgent(Agent):
         action_bounds = [action_max, action_min]
         self.grad_inv = grad_inverter(action_bounds)
 
+        self.state_planner = State_sequence(self.observation_space_size)
+
     def add_data_fetch(self, df):
         self.data_fetch = df
 
@@ -97,7 +101,8 @@ class DDPGAgent(Agent):
 
     def act(self, state):
         state = self._np_shaping(state, True)
-        goal_state = self._np_shaping(np.array([0, 0, 0, 0]), True)
+        goal_state = self.state_planner.goal_state(state)
+        # goal_state = self._np_shaping(np.array([0, 0, 0, 0]), True)
         result = self.actor_net.evaluate_actor(state, goal_state).astype(float)
         self.data_fetch.add_to_array('actors_result', result)
 
@@ -108,6 +113,8 @@ class DDPGAgent(Agent):
         episode['action'] = self._np_shaping(episode['action'], False)
         episode['obs2'] = self._np_shaping(episode['obs2'], True)
         self.add_experience(episode)
+        self.state_planner.add_state_reward(episode['obs2'], episode['reward'],
+                                            episode['done'] == 1)
 
     def add_experience(self, episode):
         self.replay_memory.append(episode)
