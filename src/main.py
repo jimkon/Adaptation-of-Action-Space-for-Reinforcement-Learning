@@ -1,4 +1,4 @@
-# !/usr/bin/python3
+#!/usr/bin/python3
 
 import gym
 
@@ -23,13 +23,13 @@ def run(episodes=10000,
 
     steps = env.spec.timestep_limit
 
-    # agent = DDPGAgent(env)
-    agent = WolpertingerAgent(env, max_actions=max_actions, k_ratio=knn)
+    agent = DDPGAgent(env)
+    #agent = WolpertingerAgent(env, max_actions=max_actions, k_ratio=knn)
 
     timer = Timer()
 
     data = util.data.Data()
-    data.set_agent(agent.get_name(), int(agent.action_space.get_number_of_actions()),
+    data.set_agent(agent.get_name(), int(agent.action_space.get_size()),
                    agent.k_nearest_neighbors, 4)
     data.set_experiment(experiment, agent.low.tolist(), agent.high.tolist(), episodes)
 
@@ -58,7 +58,9 @@ def run(episodes=10000,
             data.set_state(observation.tolist())
 
             prev_observation = observation
-            observation, reward, done, info = env.step(action[0] if len(action) == 1 else action)
+            # some environments need the action as scalar valua, and other as array
+            # for scalar: action[0] if len(action) == 1 else action
+            observation, reward, done, info = env.step(action if len(action) == 1 else action)
 
             data.set_reward(reward)
 

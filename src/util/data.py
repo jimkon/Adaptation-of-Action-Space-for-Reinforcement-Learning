@@ -53,7 +53,8 @@ class Data:
         "actions":[],
         "actors_actions":[],
         "ndn_actions":[],
-        "rewards":[]
+        "rewards":[],
+        "action_space_sizes":[]
     }
     '''
 
@@ -100,6 +101,11 @@ class Data:
 
     def set_reward(self, reward):
         self.episode['rewards'].append(reward)
+        self.__increase_data_counter()
+
+    def set_action_space_size(self, min_size, max_size):
+        self.episode['action_space_sizes'].append(min_size)
+        self.episode['action_space_sizes'].append(max_size)
         self.__increase_data_counter()
 
     def end_of_episode(self):
@@ -158,7 +164,6 @@ class Data:
 
     def set_data(self, data):
         self.data = data
-
 
     def save(self, path='', final_save=True):
         if final_save and self.temp_saves > 0:
