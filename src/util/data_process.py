@@ -135,17 +135,56 @@ class Data_handler:
         return adaption[0][0]
 
     def get_min_number_of_actions(self):
-        min_size = self.get_episode_data("action_space_sizes")[0]
+        min_size = self.get_episode_data("action_space_sizes")[0][0]
         lenght_of_first_episode = len(self.episodes[0]['actions'])
         return min_size - lenght_of_first_episode
 
-    def recreate_action_history(self):
-        added = []
-        removed = []
+    def get_actions_space_dimensions(self):
+        return len(self.data.data['experiment']['actions_low'])
 
-        tree = btree.Exploration_tree()
+    def create_action_history(self, action_space_check=False):
+        before = []
+        after = []
 
-        return added, removed
+        actions = self.data.data['agent']['max_actions']
+        init_actions = self.get_min_number_of_actions()
+        init_ratio = init_actions / actions
+
+        tree = btree.Exploration_tree(self.get_actions_space_dimensions(),
+                                      actions,
+                                      init_ratio)
+
+        sizes = self.get_episode_data("action_space_sizes") if action_space_check else None
+
+        episode_number = 0
+        for episode in self.episodes:
+
+            before.append(tree.get_points())
+
+            for search_point in episode['actors_actions']:
+                print(search_point)
+                tree.expand_towards(search_point)
+
+            tree.plot()
+
+            after.append(tree.get_points())
+
+            size_before_prune = tree.get_size()
+            tree.prune()
+
+            print(size_before_prune, len(after[0]))
+            exit()
+            if sizes is not None:
+                size_after_prune = tree.get_size()
+
+                expected_sizes = sizes[episode_number]
+
+                if size_before_prune != expected_sizes[0] or size_after_prune != expected_sizes[1]:
+                    print('Data_process: recreate_action_history: sizes do not match')
+                    return None, None
+
+            episode_number += 1
+        return before, after
 
 
 # plots
@@ -318,7 +357,7 @@ class Data_handler:
 
 if __name__ == "__main__":
     dh = Data_handler(
-        '/home/jim/Desktop/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/results/obj/data_10000_Wolp4_Inv127k12#0.json.zip')
+        '/home/jim/Desktop/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/results/obj/data_10000_Wolp4_Inv127k12#0.json')
     # dh = Data_handler('results/obj/data_10000_agen4_exp1000k10#0.json.zip')
     # dh = Data_handler('results/obj/data_2500_Wolp3_Inv1000k100#0.json.zip')
     print("loaded")
@@ -335,4 +374,4 @@ if __name__ == "__main__":
     # dh.plot_action_distribution()
     # dh.plot_action_distribution_over_time()
     # dh.plot_action_error()
-    dh.get_min_number_of_actions()
+    print(dh.create_action_history())

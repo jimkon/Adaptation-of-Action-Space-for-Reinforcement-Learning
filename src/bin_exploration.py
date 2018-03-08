@@ -166,7 +166,7 @@ class Exploration_tree:
     EXPANSION_VALUE_THRESHOLD = 1
 
     def __init__(self, dims, avg_nodes, init_ratio=.5, autoprune=True):
-        self._desirable_size = avg_nodes
+        self._limit_size = avg_nodes
         self._autoprune = autoprune
         self._dimensions = dims
         Node._init_branch_matrix(self._dimensions)
@@ -176,9 +176,7 @@ class Exploration_tree:
         self._nodes = [root]
         self._root = root
 
-
-        init_actions = int(max(5, self._desirable_size * init_ratio))
-
+        init_actions = int(max(5, self._limit_size * init_ratio))
 
         self._min_level = self.compute_level(init_actions, self._branch_factor)
         self._add_layers(self._min_level)
@@ -193,7 +191,7 @@ class Exploration_tree:
         if (node is not None):
             self._expand_node(node, towards_point=point)
 
-    def prune(self, value_threshold=0):
+    def prune(self):
         value_threshold, expected_new_size = self._get_cutoff_value()
         if value_threshold == -1:
             return
@@ -268,11 +266,13 @@ class Exploration_tree:
         return self._nodes
 
     def get_points(self):
-        result = []
-        nodes = self.get_nodes()
-        for node in nodes:
-            result.append(node.get_location())
-        return np.array(result)
+        return self.recursive_traversal(lambda node: node.get_location())
+    # def get_points(self):
+    #     result = []
+    #     nodes = self.get_nodes()
+    #     for node in nodes:
+    #         result.append(node.get_location())
+    #     return np.array(result)
 
     def get_size(self):
         return len(self._nodes)
