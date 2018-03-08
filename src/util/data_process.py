@@ -1,8 +1,13 @@
 #!/usr/bin/python3
+
 from data import *
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+
+import sys
+sys.path.insert(0, '../')
+import bin_exploration as btree
 
 
 def average_timeline(x):
