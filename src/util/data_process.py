@@ -97,6 +97,19 @@ class Data_handler:
 
         return adaption[0][0]
 
+    def get_min_number_of_actions(self):
+        min_size = self.get_episode_data("action_space_sizes")[0]
+        lenght_of_first_episode = len(self.episodes[0]['actions'])
+        return min_size - lenght_of_first_episode
+
+    def recreate_action_history(self):
+        added = []
+        removed = []
+
+        tree = btree.Exploration_tree()
+
+        return added, removed
+
 
 # plots
 
