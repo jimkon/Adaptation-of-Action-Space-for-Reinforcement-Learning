@@ -10,6 +10,43 @@ sys.path.insert(0, '../')
 import bin_exploration as btree
 
 
+"""
+DATA_TEMPLATE = '''
+{
+    "id":0,
+    "agent":{
+      "name":"default_name",
+      "max_actions":0,
+      "k":0,
+      "version":0
+    },
+    "experiment":{
+      "name":"no_exp",
+      "actions_low":null,
+      "actions_high":null,
+      "number_of_episodes":0
+    },
+    "simulation":{
+      "episodes":[]
+    }
+
+}
+'''
+
+EPISODE_TEMPLATE = '''
+{
+    "id":0,
+    "states":[],
+    "actions":[],
+    "actors_actions":[],
+    "ndn_actions":[],
+    "rewards":[],
+    "action_space_sizes":[]
+}
+'''
+"""
+
+
 def average_timeline(x):
     res = []
     count = 0
@@ -280,7 +317,8 @@ class Data_handler:
 
 
 if __name__ == "__main__":
-    dh = Data_handler('results/obj/data_10000_agen4_exp100000k10#0.json.zip')
+    dh = Data_handler(
+        '/home/jim/Desktop/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/results/obj/data_10000_Wolp4_Inv127k12#0.json.zip')
     # dh = Data_handler('results/obj/data_10000_agen4_exp1000k10#0.json.zip')
     # dh = Data_handler('results/obj/data_2500_Wolp3_Inv1000k100#0.json.zip')
     print("loaded")
@@ -296,4 +334,5 @@ if __name__ == "__main__":
     # dh.plot_average_reward()
     # dh.plot_action_distribution()
     # dh.plot_action_distribution_over_time()
-    dh.plot_action_error()
+    # dh.plot_action_error()
+    dh.get_min_number_of_actions()

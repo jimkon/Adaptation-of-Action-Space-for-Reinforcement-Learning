@@ -75,11 +75,11 @@ class Space:
     def get_space(self):
         return self.__space
 
-    def get_size(self):
-        return self._action_space_module.get_lenght()
+    def get_current_size(self):
+        return self._action_space_module.get_size()
 
     def get_size(self):
-        return self._action_space_module.get_max_lenght()
+        return self._action_space_module.get_limit_size()
 
     def shape(self):
         return self.__space.shape
