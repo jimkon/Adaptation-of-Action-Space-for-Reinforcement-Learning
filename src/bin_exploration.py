@@ -118,7 +118,6 @@ class Node:
         return check1 and check2
 
     def _equals(self, node):
-
         return np.array_equal(self.get_location(), node.get_location())
 
     def __str__(self):
@@ -177,7 +176,9 @@ class Exploration_tree:
         self._nodes = [root]
         self._root = root
 
+
         init_actions = int(max(5, self._desirable_size * init_ratio))
+
 
         self._min_level = self.compute_level(init_actions, self._branch_factor)
         self._add_layers(self._min_level)
@@ -224,14 +225,13 @@ class Exploration_tree:
             return
 
         new_nodes = node.expand(towards_point)
-
         for new_node in new_nodes:
             self._nodes.append(new_node)
 
     def _get_cutoff_value(self):
-        excess = self.get_lenght() - self._desirable_size
+        excess = self.get_size() - self._limit_size
         if excess < 0:
-            return -1, self.get_lenght()
+            return -1, self.get_size()
         values = self.recursive_traversal(
             lambda node: node.get_value() if node.get_level() > self._min_level else -1)
 
@@ -244,8 +244,8 @@ class Exploration_tree:
             cumulative.append(total)
 
         diff = np.array(cumulative)
-        new_size = self.get_lenght() - diff
-        diff_from_pref_size = np.abs(new_size - self._desirable_size)
+        new_size = self.get_size() - diff
+        diff_from_pref_size = np.abs(new_size - self._limit_size)
 
         argmin = np.argmin(diff_from_pref_size)
         res_value = unique[argmin]
@@ -274,11 +274,11 @@ class Exploration_tree:
             result.append(node.get_location())
         return np.array(result)
 
-    def get_lenght(self):
+    def get_size(self):
         return len(self._nodes)
 
-    def get_max_lenght(self):
-        return self._desirable_size
+    def get_limit_size(self):
+        return self._limit_size
 
     def print_all_nodes(self):
         nodes = self._nodes
@@ -361,14 +361,14 @@ if __name__ == '__main__':
         print(count, '----new iteration, searches', i)
         count += 1
         samples = np.abs(np.random.standard_normal((i, dims)))
-        min_tree_size.append(tree.get_lenght())
-        size.append(tree.get_lenght())
+        min_tree_size.append(tree.get_size())
+        size.append(tree.get_size())
         for p in samples:
             p = list(p)
             tree.expand_towards(p)
 
-        max_tree_size.append(tree.get_lenght())
-        size.append(tree.get_lenght())
+        max_tree_size.append(tree.get_size())
+        size.append(tree.get_size())
         tree.prune()
 
     print('size\n', size)
