@@ -164,7 +164,7 @@ class Node:
 class Exploration_tree:
 
     EXPANSION_VALUE_THRESHOLD = 1
-    INIT_TO_AVG_ACTIONS_RATIO = .1
+    INIT_TO_AVG_ACTIONS_RATIO = .5
 
     def __init__(self, dims, avg_nodes, autoprune=True):
         self._limit_size = avg_nodes

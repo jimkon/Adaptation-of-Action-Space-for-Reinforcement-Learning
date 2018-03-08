@@ -12,7 +12,7 @@ class WolpertingerAgent(agent.DDPGAgent):
         self.experiment = env.spec.id
         if self.continious_action_space:
             self.action_space = action_space.Space(self.low, self.high, max_actions)
-            max_actions = self.action_space.get_number_of_actions()
+            # max_actions = self.action_space.get_number_of_actions()
         else:
             print("this version doesn't work for discrete actions spaces")
             exit()
