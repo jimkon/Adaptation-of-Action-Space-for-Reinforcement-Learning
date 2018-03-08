@@ -6,7 +6,7 @@ from util import *
 import gym
 from gym.spaces import Box, Discrete
 
-from la_actor_net import ActorNet
+from actor_net import ActorNet
 from critic_net import CriticNet
 from actor_net_bn import ActorNet_bn
 from critic_net_bn import CriticNet_bn
@@ -97,9 +97,8 @@ class DDPGAgent(Agent):
 
     def act(self, state):
         state = self._np_shaping(state, True)
-        goal_state = self._np_shaping(np.array([0, 0, 0, 0]), True)
-        result = self.actor_net.evaluate_actor(state, goal_state).astype(float)
-        self.data_fetch.add_to_array('actors_result', result)
+        result = self.actor_net.evaluate_actor(state).astype(float)
+        self.data_fetch.set_actors_action(result[0].tolist())
 
         return result
 
@@ -143,7 +142,7 @@ class DDPGAgent(Agent):
 
         actual_batch_size = len(state)
 
-        target_action = self.actor_net.evaluate_target_actor(state, state_2)
+        target_action = self.actor_net.evaluate_target_actor(state)
 
         # Q'(s_i+1,a_i+1)
         q_t = self.critic_net.evaluate_target_critic(state_2, target_action)
@@ -161,7 +160,18 @@ class DDPGAgent(Agent):
         # Update critic by minimizing the loss
         self.critic_net.train_critic(state, action, y)
 
-        self.actor_net.train_actor(state, state_2, action)
+        # Update actor proportional to the gradients:
+        # action_for_delQ = self.act(state)  # was self.evaluate_actor instead of self.act
+        action_for_delQ = self.actor_net.evaluate_actor(state)  # dont need wolp action
+
+        if self.is_grad_inverter:
+            del_Q_a = self.critic_net.compute_delQ_a(state, action_for_delQ)  # /BATCH_SIZE
+            del_Q_a = self.grad_inv.invert(del_Q_a, action_for_delQ)
+        else:
+            del_Q_a = self.critic_net.compute_delQ_a(state, action_for_delQ)[0]  # /BATCH_SIZE
+
+        # train actor network proportional to delQ/dela and del_Actor_model/del_actor_parameters:
+        self.actor_net.train_actor(state, del_Q_a)
 
         # Update target Critic and actor network
         self.critic_net.update_target_critic()

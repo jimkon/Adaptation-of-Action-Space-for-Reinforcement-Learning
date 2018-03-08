@@ -23,8 +23,8 @@ def run(episodes=10000,
 
     steps = env.spec.timestep_limit
 
-    agent = DDPGAgent(env)
-    #agent = WolpertingerAgent(env, max_actions=max_actions, k_ratio=knn)
+    # agent = DDPGAgent(env)
+    agent = WolpertingerAgent(env, max_actions=max_actions, k_ratio=knn)
 
     timer = Timer()
 
