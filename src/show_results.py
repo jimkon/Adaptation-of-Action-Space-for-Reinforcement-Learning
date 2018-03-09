@@ -30,9 +30,3 @@ def show(folder='saved/',
     data_process.plot_action_distribution_over_time()
     data_process.plot_action_error()
     data_process.plot_action_space_size()
-
-
-if __name__ == '__main__':
-    show(folder='/', episodes=10000, actions=127, k=12,
-         experiment='InvertedPendulum-v1', v=4, id=0)
-    # show()
