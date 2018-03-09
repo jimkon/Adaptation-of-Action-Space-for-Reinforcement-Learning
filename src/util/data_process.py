@@ -7,7 +7,7 @@ import math
 
 import sys
 sys.path.insert(0, '../')
-import bin_exploration as btree
+import action_space
 
 
 """
@@ -142,48 +142,51 @@ class Data_handler:
     def get_actions_space_dimensions(self):
         return len(self.data.data['experiment']['actions_low'])
 
-    def create_action_history(self, action_space_check=False):
+    def create_action_history(self, action_space_check=True):
         before = []
         after = []
 
         actions = self.data.data['agent']['max_actions']
         init_actions = self.get_min_number_of_actions()
         init_ratio = init_actions / actions
+        low = self.data.data['experiment']['actions_low']
+        high = self.data.data['experiment']['actions_high']
 
-        tree = btree.Exploration_tree(self.get_actions_space_dimensions(),
-                                      actions,
-                                      init_ratio)
+        space = action_space.Space(low, high, actions, init_ratio)
+        tree = space._action_space_module
 
         sizes = self.get_episode_data("action_space_sizes") if action_space_check else None
 
         episode_number = 0
         for episode in self.episodes:
 
-            before.append(tree.get_points())
+            before.append(space.get_space())
 
             for search_point in episode['actors_actions']:
-                print(search_point)
-                tree.expand_towards(search_point)
+                space.search_point(search_point, 1)
 
-            tree.plot()
+            # tree.plot()
 
-            after.append(tree.get_points())
+            after.append(space.get_space())
 
             size_before_prune = tree.get_size()
-            tree.prune()
+            space.update()
 
-            print(size_before_prune, len(after[0]))
-            exit()
             if sizes is not None:
                 size_after_prune = tree.get_size()
 
                 expected_sizes = sizes[episode_number]
 
+                print(size_before_prune, '==',
+                      expected_sizes[0], ' and ', size_after_prune, '==', expected_sizes[1])
                 if size_before_prune != expected_sizes[0] or size_after_prune != expected_sizes[1]:
                     print('Data_process: recreate_action_history: sizes do not match')
                     return None, None
 
             episode_number += 1
+            if episode_number == 30:
+                return before, after
+
         return before, after
 
 
@@ -258,16 +261,30 @@ class Data_handler:
         plt.grid(True)
         plt.show()
 
+    def plot_actions(self):
+        picked_actions = np.array(self.get_episode_data('actions'))
+        actors_actions = np.array(self.get_episode_data('actors_actions'))
+        ndn = np.array(self.get_episode_data('ndn_actions'))
+
+        plt.plot(ndn, 'r1', label='Nearest discrete neighbor'.format())
+        plt.plot(actors_actions, 'g1', label='Actors actions'.format())
+        plt.plot(picked_actions, 'b1', label='Final actions'.format())
+
+        plt.ylabel("Action value")
+        plt.xlabel("Episodes")
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
     def plot_action_distribution(self):
         assert len(self.data.data['experiment']['actions_low']
                    ) == 1, 'This function works only for 1-dimensional action space'
         picked_actions = np.array(self.get_episode_data('actions'))
         actors_actions = np.array(self.get_episode_data('actors_actions'))
-        # picked_actions = np.reshape(picked_actions, (len(picked_actions)))
-        # actors_actions = np.reshape(actors_actions, (len(actors_actions)))
+
         picked_actions = picked_actions.flatten()
-        # print(picked_actions[:100])
         actors_actions = actors_actions.flatten()
+
         plt.hist([picked_actions, actors_actions], bins=100,
                  label=['{} actions'.format(len(picked_actions)),
                         'continuous actions'])
@@ -356,22 +373,16 @@ class Data_handler:
 
 
 if __name__ == "__main__":
-    dh = Data_handler(
-        '/home/jim/Desktop/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/results/obj/data_10000_Wolp4_Inv127k12#0.json')
-    # dh = Data_handler('results/obj/data_10000_agen4_exp1000k10#0.json.zip')
-    # dh = Data_handler('results/obj/data_2500_Wolp3_Inv1000k100#0.json.zip')
+    dh = Data_handler('data_10000_Wolp4_Inv127k12#0.json')
+    # dh = Data_handler('data_10000_agen4_exp1000k10#0.json.zip')
+    # dh = Data_handler('saved/data_2500_Wolp4_Inv7k1#0.json.zip')
     print("loaded")
-    #
-    # picked_actions = dh.get_episode_data('actions')
-    # # picked_actions = picked_actions.flatten()
-    # print(picked_actions[:100])
-    # exit()
 
-    # dh.get_full_episode_rewards()
-    # exit()
     # dh.plot_rewards()
     # dh.plot_average_reward()
+    # dh.plot_actions()
     # dh.plot_action_distribution()
     # dh.plot_action_distribution_over_time()
     # dh.plot_action_error()
+
     print(dh.create_action_history())
