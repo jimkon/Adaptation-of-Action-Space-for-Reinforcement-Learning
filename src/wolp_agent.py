@@ -12,7 +12,7 @@ class WolpertingerAgent(agent.DDPGAgent):
         self.experiment = env.spec.id
         if self.continious_action_space:
             self.action_space = action_space.Space(self.low, self.high, max_actions)
-            max_actions = self.action_space.get_number_of_actions()
+            # max_actions = self.action_space.get_number_of_actions()
         else:
             print("this version doesn't work for discrete actions spaces")
             exit()
@@ -27,7 +27,7 @@ class WolpertingerAgent(agent.DDPGAgent):
         return self.action_space
 
     def get_action_space_size(self):
-        return self.action_space.get_size()
+        return self.action_space.get_current_size()
 
     def act(self, state):
         # taking a continuous action from the actor
@@ -39,11 +39,11 @@ class WolpertingerAgent(agent.DDPGAgent):
     def observe(self, episode):
         super().observe(episode)
         if episode['done'] == 1:
-            min_action_space_size = self.action_space.get_size()
+            min_action_space_size = self.action_space.get_current_size()
 
             self.action_space.update()
 
-            max_action_space_size = self.action_space.get_size()
+            max_action_space_size = self.action_space.get_current_size()
             self.data_fetch.set_action_space_size(min_action_space_size, max_action_space_size)
 
     def wolp_action(self, state, proto_action):
