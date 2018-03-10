@@ -29,7 +29,7 @@ def show(folder='saved/',
     data_process.plot_actions()
     data_process.plot_action_distribution()
     data_process.plot_action_distribution_over_time()
-    data_process.plot_action_error()
+    data_process.plot_discretization_error()
     data_process.plot_action_space_size()
 
 
