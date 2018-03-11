@@ -350,6 +350,8 @@ class Data_handler:
         ndn = np.array(self.get_episode_data('ndn_actions'))
         actors_actions = np.array(self.get_episode_data('actors_actions'))
 
+        size = len(actors_actions)
+
         error = np.sqrt(np.sum(np.square(ndn - actors_actions), axis=1))  # square error
 
         sorting_indexes = np.argsort(actors_actions, axis=0)
@@ -357,11 +359,11 @@ class Data_handler:
         sorted_actions = np.reshape(actors_actions[sorting_indexes], actors_actions.shape)
 
         error = error[sorting_indexes]
-        w_error = apply_func_to_window(error, 1000, np.average)
+        w_error = apply_func_to_window(error, int(size * .01), np.average)
 
         action_distr, _ = np.histogram(actors_actions, bins=1000)
-        action_distr = action_distr / len(actors_actions)
-        plt.plot(np.linspace(sorted_actions[0], sorted_actions[len(sorted_actions) - 1], 1000),
+        action_distr = action_distr / size
+        plt.plot(np.linspace(sorted_actions[0], sorted_actions[size - 1], 1000),
                  action_distr, linewidth=0.5, label='action usage distr')
 
         plt.plot(sorted_actions, w_error, label='Error distribution')
@@ -376,21 +378,24 @@ class Data_handler:
             # print(w_i)
             weighted_error[i] = e * action_distr[w_i]
             i += 1
-        plt.plot(sorted_actions, weighted_error, label='weighted error distr')
-        #
-        # argmin = np.argmin(w_error)
-        # plt.plot(sorted_actions[argmin], w_error[argmin],
-        #          'bo', label='min={}'.format(w_error[argmin]))
-        #
-        # avg = np.average(error)
-        # plt.plot([sorted_actions[0], sorted_actions[len(sorted_actions) - 1]],
-        #          [avg, avg], label='avg={}'.format(avg))
-        #
-        # avg_number_of_actions = self.get_average_action_space_size()
-        # mean_expected_error = 1 / (4 * avg_number_of_actions)
-        # plt.plot([sorted_actions[0], sorted_actions[len(sorted_actions) - 1]],
-        #          [mean_expected_error, mean_expected_error],
-        #          label='mean expected error={}'.format(mean_expected_error))
+        # plt.plot(sorted_actions, weighted_error, label='weighted error distr')
+
+        weighted_error = apply_func_to_window(weighted_error, int(size * 0.01), np.average)
+        plt.plot(sorted_actions, weighted_error, linewidth=1, label='weighted error distr2')
+
+        argmin = np.argmin(w_error)
+        plt.plot(sorted_actions[argmin], w_error[argmin],
+                 'bo', linewidth=1, label='min={}'.format(w_error[argmin]))
+
+        avg = np.average(error)
+        plt.plot([sorted_actions[0], sorted_actions[size - 1]],
+                 [avg, avg], label='avg={}'.format(avg))
+
+        avg_number_of_actions = self.get_average_action_space_size()
+        mean_expected_error = 1 / (4 * avg_number_of_actions)
+        plt.plot([sorted_actions[0], sorted_actions[size - 1]],
+                 [mean_expected_error, mean_expected_error], linewidth=1,
+                 label='mean expected error={}'.format(mean_expected_error))
 
         plt.ylabel("Error")
         plt.xlabel("Space")
@@ -444,9 +449,9 @@ class Data_handler:
 
 
 if __name__ == "__main__":
-    dh = Data_handler('data_10000_Wolp4_Inv127k12#0.json')
+    # dh = Data_handler('data_10000_Wolp4_Inv127k12#0.json')
     # dh = Data_handler('data_10000_Wolp4_Inv1000k51#0.json.zip')
-    # dh = Data_handler('data_10000_Wolp4_Inv255k25#0.json.zip')
+    dh = Data_handler('data_10000_Wolp4_Inv255k25#0.json.zip')
     print("loaded")
 
     # dh.plot_rewards()
