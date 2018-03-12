@@ -166,7 +166,7 @@ class Exploration_tree:
     EXPANSION_VALUE_THRESHOLD = 1
 
     def __init__(self, dims, avg_nodes, init_ratio=.5, autoprune=True):
-        self._desirable_size = avg_nodes
+        self._limit_size = avg_nodes
         self._autoprune = autoprune
         self._dimensions = dims
         Node._init_branch_matrix(self._dimensions)
@@ -176,9 +176,7 @@ class Exploration_tree:
         self._nodes = [root]
         self._root = root
 
-
-        init_actions = int(max(5, self._desirable_size * init_ratio))
-
+        init_actions = int(max(5, self._limit_size * init_ratio))
 
         self._min_level = self.compute_level(init_actions, self._branch_factor)
         self._add_layers(self._min_level)
