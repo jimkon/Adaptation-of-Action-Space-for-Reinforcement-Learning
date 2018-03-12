@@ -165,9 +165,11 @@ class Data_handler:
         for episode in self.episodes:
 
             before.append(space.get_space())
+            print(len(space.get_space()))
 
             for search_point in episode['actors_actions']:
                 space.search_point(search_point, 1)
+            print('added points', len(episode['actors_actions']), episode['actors_actions'])
 
             # tree.plot()
 
@@ -175,15 +177,24 @@ class Data_handler:
 
             size_before_prune = tree.get_size()
             space.update()
+            print(len(space.get_space()))
 
             size_after_prune = tree.get_size()
             expected_sizes = sizes[episode_number]
 
+            print('Data_process: recreate_action_history: sizes do not match => episode',
+                  episode_number, end=', ')
+            print(size_before_prune, '==',
+                  expected_sizes[0], ' and ', size_after_prune, '==', expected_sizes[1])
+
             if size_before_prune != expected_sizes[0] or size_after_prune != expected_sizes[1]:
-                print('Data_process: recreate_action_history: sizes do not match => episode',
-                      episode_number, end=', ')
-                print(size_before_prune, '==',
-                      expected_sizes[0], ' and ', size_after_prune, '==', expected_sizes[1])
+                # print('Data_process: recreate_action_history: sizes do not match => episode',
+                #       episode_number, end=', ')
+                # print(size_before_prune, '==',
+                #       expected_sizes[0], ' and ', size_after_prune, '==', expected_sizes[1])
+                #
+                # print('added points', len(episode['actors_actions']))
+                exit()
                 if action_space_check:
                     return None, None
 
@@ -372,16 +383,11 @@ class Data_handler:
         i = 0
         min_a = np.min(actors_actions)
         max_a = np.max(actors_actions)
-        for e in weighted_error:
-            # print(np.interp(e, [min_a, max_a], [0, len(action_distr) - 1]))
-            w_i = int(round(np.interp(e, [min_a, max_a], [0, len(action_distr) - 1])[0]))
-            # print(w_i)
-            weighted_error[i] = e * action_distr[w_i]
-            i += 1
-        # plt.plot(sorted_actions, weighted_error, label='weighted error distr')
 
+        w_i = np.interp(weighted_error, [min_a, max_a], [0, len(action_distr) - 1]).astype(int)
+        weighted_error = np.multiply(weighted_error, action_distr[w_i])
         weighted_error = apply_func_to_window(weighted_error, int(size * 0.01), np.average)
-        plt.plot(sorted_actions, weighted_error, linewidth=1, label='weighted error distr2')
+        plt.plot(sorted_actions, weighted_error, linewidth=1, label='weighted error distr')
 
         argmin = np.argmin(w_error)
         plt.plot(sorted_actions[argmin], w_error[argmin],
@@ -451,7 +457,8 @@ class Data_handler:
 if __name__ == "__main__":
     # dh = Data_handler('data_10000_Wolp4_Inv127k12#0.json')
     # dh = Data_handler('data_10000_Wolp4_Inv1000k51#0.json.zip')
-    dh = Data_handler('data_10000_Wolp4_Inv255k25#0.json.zip')
+    # dh = Data_handler('data_10000_Wolp4_Inv255k25#0.json.zip')
+    dh = Data_handler('data_5000_Wolp4_Inv10000k1000#0.json.zip')
     print("loaded")
 
     # dh.plot_rewards()
@@ -461,7 +468,7 @@ if __name__ == "__main__":
     # dh.plot_action_distribution_over_time()
     # dh.plot_discretization_error()
     # dh.plot_actor_critic_error()
-    dh.plot_discretization_error_distribution()
+    # dh.plot_discretization_error_distribution()
 
-    # b, a = dh.create_action_history()
-    # print(len(b), len(a))
+    b, a = dh.create_action_history()
+    print(len(b), len(a))
