@@ -13,12 +13,18 @@ class Node:
 
     def __init__(self, location, radius, parent):
         self._value = 0
-        self._location = np.array(location)
+        self._location = location
         self._radius = radius
-        self._low_limit = -radius + location
-        self._high_limit = radius + location
+        self._low_limit = location - radius
+        self._high_limit = location + radius
+        if np.array_equal(self._low_limit, self._high_limit):
+            raise ArithmeticError('Node: Low == High :{}=={}'.format(
+                self._low_limit, self._high_limit))
         self._branches = [None] * len(self.BRANCH_MATRIX)
         self._parent = parent
+
+        self.__achieved_precision_limit = False
+
         if parent is not None:
             self._level = parent._level + 1
         else:
@@ -36,7 +42,12 @@ class Node:
 
             new_location = self._location + self.BRANCH_MATRIX[i] * new_radius
 
-            new_node = Node(new_location, new_radius, self)
+            try:
+                new_node = Node(new_location, new_radius, self)
+            except Exception as e:
+                self.__achieved_precision_limit = True
+                return new_nodes
+
             if (towards_point is not None) and (not new_node._covers_point(towards_point)):
                 continue
             self._branches[i] = new_node
@@ -103,11 +114,14 @@ class Node:
                 res.append(branch)
         return res
 
+    def is_root(self):
+        return self._parent is None
+
     def is_leaf(self):
         return len(self.get_branches()) == 0
 
     def is_expandable(self):
-        return len(self.get_branches()) < len(self.BRANCH_MATRIX)
+        return len(self.get_branches()) < len(self.BRANCH_MATRIX) or self.__achieved_precision_limit
 
     def increase_value(self):
         self._value += 1
@@ -179,7 +193,7 @@ class Exploration_tree:
 
         init_actions = int(max(5, self._limit_size * init_ratio))
 
-        self._min_level = self.compute_level(init_actions, self._branch_factor)
+        self._min_level = Exploration_tree.compute_level(init_actions, self._branch_factor)
         self._add_layers(self._min_level)
 
         self.value_threshold = 0
@@ -188,21 +202,12 @@ class Exploration_tree:
         assert len(point) == self._dimensions, 'input point must have same number of dimensions: {} given point: {}'.format(
             self._dimensions, point)
 
+        point = Exploration_tree.correct_point(point)
         node = self.search_nearest_node(point, increase=True)
+        assert node is not None, 'Search return None'
+
         if node is not None:
             self._expand_node(node, towards_point=point)
-        else:
-            new_point = []
-            for c in point:
-                if c > 1:
-                    new_point.append(1)
-                elif c < 0:
-                    new_point.append(0)
-                else:
-                    new_point.append(c)
-
-            node = self.search_nearest_node(new_point, increase=True)
-            self._expand_node(node, towards_point=new_point)
 
     def prune(self):
         value_threshold, expected_new_size = self._get_cutoff_value()
@@ -347,6 +352,21 @@ class Exploration_tree:
             return max(power - 1, 0)
         return max(power, 0)
 
+    @staticmethod
+    def correct_point(point):
+        new_point = []
+        for c in point:
+            if c > 1:
+                print(point)
+                new_point.append(1)
+            elif c < 0:
+                print(point)
+                new_point.append(0)
+            else:
+                new_point.append(c)
+
+        return new_point
+
 
 if __name__ == '__main__':
 
@@ -357,24 +377,26 @@ if __name__ == '__main__':
 
     tree = Exploration_tree(dims, tree_size)
 
-    samples_size_buffer = np.random.random(iterations) * max_size
+    samples_size_buffer = np.random.random(iterations) * max_size + 1
     samples_size_buffer = samples_size_buffer.astype(int)
 
     count = 0
     for i in samples_size_buffer:
         print(count, '----new iteration, searches', i)
         count += 1
-        samples = np.abs(np.random.standard_normal((i, dims)))
+        samples = np.abs(np.random.standard_normal((i, dims))) * 0.4
         starting_size = tree.get_size()
         for p in samples:
             p = list(p)
-            print('expand ', p)
             tree.expand_towards(p)
 
         ending_size = tree.get_size()
-        print('added', i, 'points: size before-after', starting_size,
-              '-', ending_size, '({})'.format(ending_size - starting_size))
+        # print('added', i, 'points(', samples, '): size before-after', starting_size,
+        #       '-', ending_size, '({})'.format(ending_size - starting_size))
         if starting_size + i != ending_size:
+            print('ERROR')
+            tree.plot()
             exit()
 
         tree.prune()
+    tree.plot()
