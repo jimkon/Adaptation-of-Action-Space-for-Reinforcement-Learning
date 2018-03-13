@@ -17,9 +17,6 @@ class Node:
         self._radius = radius
         self._low_limit = location - radius
         self._high_limit = location + radius
-        if np.array_equal(self._low_limit, self._high_limit):
-            raise ArithmeticError('Node: Low == High :{}=={}'.format(
-                self._low_limit, self._high_limit))
         self._branches = [None] * len(self.BRANCH_MATRIX)
         self._parent = parent
 
@@ -29,6 +26,11 @@ class Node:
             self._level = parent._level + 1
         else:
             self._level = 0
+
+        if np.array_equal(self._low_limit, self._high_limit):
+            print('expansion of', self, 'stopped')
+            raise ArithmeticError('Node: Low == High :{}=={}'.format(
+                self._low_limit, self._high_limit))
 
     def expand(self, towards_point=None):
         if not self.is_expandable():
@@ -179,7 +181,7 @@ class Exploration_tree:
 
     EXPANSION_VALUE_THRESHOLD = 1
 
-    def __init__(self, dims, avg_nodes, init_ratio=.5, autoprune=True):
+    def __init__(self, dims, avg_nodes, min_size_ratio=.1, autoprune=True):
 
         self._limit_size = avg_nodes
         self._autoprune = autoprune
@@ -191,12 +193,12 @@ class Exploration_tree:
         self._nodes = [root]
         self._root = root
 
-        init_actions = int(max(5, self._limit_size * init_ratio))
+        min_actions = int(max(5, self._limit_size * min_size_ratio))
 
-        self._min_level = Exploration_tree.compute_level(init_actions, self._branch_factor)
-        self._add_layers(self._min_level)
+        self._min_level = Exploration_tree.compute_level(min_actions, self._branch_factor)
 
-        self.value_threshold = 0
+        init_level = Exploration_tree.compute_level(avg_nodes, self._branch_factor)
+        self._add_layers(init_level)
 
     def expand_towards(self, point):
         assert len(point) == self._dimensions, 'input point must have same number of dimensions: {} given point: {}'.format(
@@ -236,8 +238,8 @@ class Exploration_tree:
         self._root.recursive_collection(res, func)
         return res
 
-    def _expand_node(self, node, towards_point=None):
-        if node.get_level() > self._min_level and node.get_value() < self.EXPANSION_VALUE_THRESHOLD:
+    def _expand_node(self, node, towards_point=None, force_expand=False):
+        if not force_expand and node.get_level() > self._min_level and node.get_value() < self.EXPANSION_VALUE_THRESHOLD:
             return
 
         new_nodes = node.expand(towards_point)
@@ -278,7 +280,7 @@ class Exploration_tree:
     def _add_layer(self):
         current_nodes = np.copy(self.get_nodes())
         for node in current_nodes:
-            self._expand_node(node)
+            self._expand_node(node, force_expand=True)
 
     def get_nodes(self):
         return self._nodes
@@ -357,10 +359,8 @@ class Exploration_tree:
         new_point = []
         for c in point:
             if c > 1:
-                print(point)
                 new_point.append(1)
             elif c < 0:
-                print(point)
                 new_point.append(0)
             else:
                 new_point.append(c)

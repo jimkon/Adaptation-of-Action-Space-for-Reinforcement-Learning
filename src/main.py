@@ -45,7 +45,7 @@ def run(episodes=10000,
         observation = env.reset()
 
         total_reward = 0
-        print('Episode ', ep, '/', episodes - 1, end='')
+        print('Episode ', ep, '/', episodes - 1, end='. ')
         for t in range(steps):
 
             if render:

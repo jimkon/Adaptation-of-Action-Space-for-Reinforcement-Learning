@@ -16,14 +16,14 @@ import bin_exploration
 
 class Space:
 
-    def __init__(self, low, high, points, init_ratio=.5):
+    def __init__(self, low, high, points, min_size_ratio=.1):
         self._low = np.array(low)
         self._high = np.array(high)
         self._range = self._high - self._low
         self._dimensions = len(low)
 
         self._action_space_module = bin_exploration.Exploration_tree(
-            self._dimensions, points, init_ratio=init_ratio, autoprune=True)
+            self._dimensions, points, min_size_ratio=min_size_ratio, autoprune=True)
 
         self.__space = self._action_space_module.get_points()
 
