@@ -16,22 +16,19 @@ import bin_exploration
 
 class Space:
 
-    def __init__(self, low, high, points):
+    def __init__(self, low, high, points, init_ratio=.5):
         self._low = np.array(low)
         self._high = np.array(high)
         self._range = self._high - self._low
         self._dimensions = len(low)
 
         self._action_space_module = bin_exploration.Exploration_tree(
-            self._dimensions, points, autoprune=True)
+            self._dimensions, points, init_ratio=init_ratio, autoprune=True)
 
         self.__space = self._action_space_module.get_points()
 
         self._flann = pyflann.FLANN()
         self.rebuild_flann()
-
-    def rebuild_flann(self):
-        self._index = self._flann.build_index(np.copy(self.__space), algorithm='kdtree')
 
     def update(self):
         self._flann.delete_index()
@@ -65,6 +62,9 @@ class Space:
         node = self._action_space_module.get_node(actions_index)
 
         # self._action_space_module.expand_towards(node.get_location())
+
+    def rebuild_flann(self):
+        self._index = self._flann.build_index(np.copy(self.__space), algorithm='kdtree')
 
     def _import_point(self, point):
         return (point - self._low) / self._range

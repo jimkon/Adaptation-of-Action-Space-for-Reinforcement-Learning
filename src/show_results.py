@@ -11,14 +11,14 @@ def show(folder='saved/',
          v=4,
          id=0):
 
-    name = '/home/jim/Desktop/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/results/obj/{}data_{}_Wolp{}_{}{}k{}#{}.json.zip'.format(folder,
-                                                                                                                                                 episodes,
-                                                                                                                                                 v,
-                                                                                                                                                 experiment[:3],
-                                                                                                                                                 actions,
-                                                                                                                                                 k,
-                                                                                                                                                 id
-                                                                                                                                                 )
+    name = '{}data_{}_Wolp{}_{}{}k{}#{}.json.zip'.format(folder,
+                                                         episodes,
+                                                         v,
+                                                         experiment[:3],
+                                                         actions,
+                                                         k,
+                                                         id
+                                                         )
 
     data_process = Data_handler(name)
 
@@ -26,7 +26,8 @@ def show(folder='saved/',
 
     data_process.plot_rewards()
     data_process.plot_average_reward()
+    data_process.plot_actions()
     data_process.plot_action_distribution()
     data_process.plot_action_distribution_over_time()
-    data_process.plot_action_error()
+    data_process.plot_discretization_error()
     data_process.plot_action_space_size()
