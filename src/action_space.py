@@ -46,7 +46,7 @@ class Space:
 
         indexes, _ = self._flann.nn_index(p_in, k)
 
-        knns = self.__space[indexes[0]]
+        knns = self.__space[indexes]
 
         p_out = []
         for p in knns:
