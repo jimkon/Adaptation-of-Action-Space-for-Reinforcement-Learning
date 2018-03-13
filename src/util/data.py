@@ -7,6 +7,8 @@ import zipfile
 
 def load(file_name):
     data = Data()
+    file_name = Data.PATH + file_name
+
     if zipfile.is_zipfile(file_name):
         print('Data: Unziping ', file_name, '...')
         with zipfile.ZipFile(file_name) as myzip:
