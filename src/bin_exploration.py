@@ -177,7 +177,6 @@ class Exploration_tree:
         self._nodes = [root]
         self._root = root
 
-
         init_actions = int(max(5, self._limit_size * init_ratio))
 
         self._min_level = self.compute_level(init_actions, self._branch_factor)
@@ -280,8 +279,7 @@ class Exploration_tree:
         return self._nodes
 
     def get_points(self):
-        return self.recursive_traversal(lambda node: node.get_location())
-
+        return np.array(self.recursive_traversal(lambda node: node.get_location()))
 
     def get_size(self):
         return len(self._nodes)
