@@ -166,6 +166,7 @@ class Exploration_tree:
     EXPANSION_VALUE_THRESHOLD = 1
 
     def __init__(self, dims, avg_nodes, init_ratio=.5, autoprune=True):
+
         self._limit_size = avg_nodes
         self._autoprune = autoprune
         self._dimensions = dims
@@ -175,6 +176,7 @@ class Exploration_tree:
         root = Node(np.ones(dims) * 0.5, 0.5, None)
         self._nodes = [root]
         self._root = root
+
 
         init_actions = int(max(5, self._limit_size * init_ratio))
 
@@ -279,12 +281,7 @@ class Exploration_tree:
 
     def get_points(self):
         return self.recursive_traversal(lambda node: node.get_location())
-    # def get_points(self):
-    #     result = []
-    #     nodes = self.get_nodes()
-    #     for node in nodes:
-    #         result.append(node.get_location())
-    #     return np.array(result)
+
 
     def get_size(self):
         return len(self._nodes)

@@ -45,7 +45,7 @@ def run(episodes=10000,
         observation = env.reset()
 
         total_reward = 0
-        print('Episode ', ep, '/', episodes - 1, 'started...', end='')
+        print('Episode ', ep, '/', episodes - 1, end='')
         for t in range(steps):
 
             if render:
@@ -79,14 +79,14 @@ def run(episodes=10000,
                 t += 1
                 reward_sum += total_reward
                 time_passed = timer.get_time()
-                print('Reward:{} Steps:{} t:{} ({}/step) Cur avg={} ,{} actions(r={})'.format(total_reward, t,
-                                                                                              time_passed,
-                                                                                              round(
-                                                                                                  time_passed / t),
-                                                                                              round(
-                                                                                                  reward_sum / (ep + 1)),
-                                                                                              agent.get_action_space_size(),
-                                                                                              agent.get_action_space_size() / max_actions))
+                print('Reward:{} Steps:{} t:{} ({}/step) Curr avg={}, {} actions({})'.format(total_reward, t,
+                                                                                             time_passed,
+                                                                                             round(
+                                                                                                 time_passed / t),
+                                                                                             round(
+                                                                                                 reward_sum / (ep + 1)),
+                                                                                             agent.get_action_space_size(),
+                                                                                             agent.get_action_space_size() / max_actions))
 
                 data.finish_and_store_episode()
 
