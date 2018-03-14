@@ -146,62 +146,6 @@ class Data_handler:
         sizes = self.get_episode_data("action_space_sizes")
         return np.average(sizes)
 
-    def create_action_history(self, action_space_check=False):
-        before = []
-        after = []
-
-        actions = self.data.data['agent']['max_actions']
-        init_actions = self.get_min_number_of_actions()
-        init_ratio = init_actions / actions
-        low = self.data.data['experiment']['actions_low']
-        high = self.data.data['experiment']['actions_high']
-
-        space = action_space.Space(low, high, actions, init_ratio)
-        tree = space._action_space_module
-
-        sizes = self.get_episode_data("action_space_sizes")
-
-        episode_number = 0
-        for episode in self.episodes:
-
-            before.append(space.get_space())
-            print(len(space.get_space()))
-
-            for search_point in episode['actors_actions']:
-                space.search_point(search_point, 1)
-            print('added points', len(episode['actors_actions']), episode['actors_actions'])
-
-            # tree.plot()
-
-            after.append(space.get_space())
-
-            size_before_prune = tree.get_size()
-            space.update()
-            print(len(space.get_space()))
-
-            size_after_prune = tree.get_size()
-            expected_sizes = sizes[episode_number]
-
-            print('Data_process: recreate_action_history: sizes do not match => episode',
-                  episode_number, end=', ')
-            print(size_before_prune, '==',
-                  expected_sizes[0], ' and ', size_after_prune, '==', expected_sizes[1])
-
-            if size_before_prune != expected_sizes[0] or size_after_prune != expected_sizes[1]:
-                # print('Data_process: recreate_action_history: sizes do not match => episode',
-                #       episode_number, end=', ')
-                # print(size_before_prune, '==',
-                #       expected_sizes[0], ' and ', size_after_prune, '==', expected_sizes[1])
-                #
-                # print('added points', len(episode['actors_actions']))
-                exit()
-                if action_space_check:
-                    return None, None
-
-            episode_number += 1
-
-        return before, after
-
 
 # plots
 
@@ -463,12 +407,12 @@ if __name__ == "__main__":
 
     # dh.plot_rewards()
     # dh.plot_average_reward()
-    # dh.plot_actions()
+    dh.plot_actions()
     # dh.plot_action_distribution()
     # dh.plot_action_distribution_over_time()
     # dh.plot_discretization_error()
     # dh.plot_actor_critic_error()
     # dh.plot_discretization_error_distribution()
 
-    b, a = dh.create_action_history()
-    print(len(b), len(a))
+    # b, a = dh.create_action_history()
+    # print(len(b), len(a))
