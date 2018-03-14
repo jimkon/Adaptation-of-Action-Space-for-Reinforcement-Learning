@@ -44,6 +44,8 @@ class Space:
 
         self._action_space_module.expand_towards(p_in)
 
+        if self.get_size() < k:
+            k = self.get_size()
         indexes, _ = self._flann.nn_index(p_in, k)
 
         knns = self.__space[indexes]
