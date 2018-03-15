@@ -181,7 +181,7 @@ class Exploration_tree:
 
     EXPANSION_VALUE_THRESHOLD = 1
 
-    def __init__(self, dims, avg_nodes, min_size_ratio=.1, autoprune=True):
+    def __init__(self, dims, avg_nodes, autoprune=True):
 
         self._limit_size = avg_nodes
         self._autoprune = autoprune
@@ -193,9 +193,10 @@ class Exploration_tree:
         self._nodes = [root]
         self._root = root
 
-        min_actions = int(max(5, self._limit_size * min_size_ratio))
+        # min_actions = int(max(5, self._limit_size * min_size_ratio))
 
-        self._min_level = Exploration_tree.compute_level(min_actions, self._branch_factor)
+        # self._min_level = Exploration_tree.compute_level(min_actions, self._branch_factor)
+        self._min_level = 0
 
         init_level = Exploration_tree.compute_level(avg_nodes, self._branch_factor)
         self._add_layers(init_level)
@@ -304,7 +305,7 @@ class Exploration_tree:
 
     def plot(self, save=False, path='/home/jim/Desktop/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/results/pics'):
         nodes = self.get_nodes()
-        plt.figure()
+        # plt.figure()
         plt.grid(True)
         print('nodes to plot:', len(nodes))
         for node in nodes:

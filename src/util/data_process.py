@@ -109,12 +109,17 @@ class Data_handler:
         result = []
         for i in self.episodes:
             data = i[field]
-            if len(data) == 0:
+
+            if isinstance(data, list) and len(data) == 0:
                 continue
             if isinstance(data, list) and isinstance(data[0], list):
                 result.extend(data)
             else:
                 result.append(data)
+
+        # if len(np.array(result).shape) < 2:
+        #     print('ERROR getting episode data:', field)
+        #     exit()
         return result
 
     def get_full_episode_rewards(self):
@@ -145,6 +150,12 @@ class Data_handler:
     def get_average_action_space_size(self):
         sizes = self.get_episode_data("action_space_sizes")
         return np.average(sizes)
+
+    def get_prune_episodes(self):
+        sizes = np.array(self.get_episode_data("action_space_sizes")).flatten()
+        size_1 = sizes[1:]
+        size_2 = sizes[:len(sizes) - 1]
+        return np.where(size_1 < size_2)[0] / 2 - 1
 
 
 # plots
@@ -224,8 +235,8 @@ class Data_handler:
         ndn = np.array(self.get_episode_data('ndn_actions'))
 
         plt.plot(ndn, 'r1', label='Nearest discrete neighbor'.format())
-        plt.plot(actors_actions, 'g1', label='Actors actions'.format())
-        plt.plot(picked_actions, 'b1', label='Final actions'.format())
+        plt.plot(actors_actions, 'g2', label='Actors actions'.format())
+        plt.plot(picked_actions, 'b3', label='Final actions'.format())
 
         plt.ylabel("Action value")
         plt.xlabel("Episodes")
@@ -402,17 +413,20 @@ if __name__ == "__main__":
     # dh = Data_handler('data_10000_Wolp4_Inv127k12#0.json')
     # dh = Data_handler('data_10000_Wolp4_Inv1000k51#0.json.zip')
     # dh = Data_handler('data_10000_Wolp4_Inv255k25#0.json.zip')
-    dh = Data_handler('data_5000_Wolp4_Inv10000k1000#0.json.zip')
+    # dh = Data_handler('data_5000_Wolp4_Inv10000k1000#0.json.zip')
+    dh = Data_handler('data_100_Wolp4_Inv127k12#0.json.zip')
     print("loaded")
 
     # dh.plot_rewards()
     # dh.plot_average_reward()
-    dh.plot_actions()
+    # dh.plot_actions()
     # dh.plot_action_distribution()
     # dh.plot_action_distribution_over_time()
     # dh.plot_discretization_error()
     # dh.plot_actor_critic_error()
     # dh.plot_discretization_error_distribution()
+    print(dh.get_prune_episodes())
 
+    dh.plot_action_space_size()
     # b, a = dh.create_action_history()
     # print(len(b), len(a))

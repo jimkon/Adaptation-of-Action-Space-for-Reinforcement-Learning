@@ -24,7 +24,7 @@ def load(file_name):
 class Data:
 
     PATH = '/home/jim/Desktop/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/results/obj/'
-    AUTOSAVE_BATCH_SIZE = 1e5  # 1 mB
+    AUTOSAVE_BATCH_SIZE = 1000  # 1e5  # 1 mB
 
     DATA_TEMPLATE = '''
     {
@@ -170,17 +170,16 @@ class Data:
     def save(self, path='', final_save=True):
         if final_save and self.temp_saves > 0:
             if self.data_added > 0:
-                self.end_of_episode()
+                # self.end_of_episode()
                 self.temp_save()
             print('Data: Merging all temporary files')
             for i in range(self.temp_saves):
 
-                file_name = '{}temp/{}{}.json'.format(self.PATH,
-                                                      i,
-                                                      self.get_file_name())
+                file_name = 'temp/{}{}.json'.format(i,
+                                                    self.get_file_name())
                 temp_data = load(file_name)
                 self.merge(temp_data)
-                os.remove(file_name)
+                os.remove(self.PATH + file_name)
 
         final_file_name = self.PATH + path + self.get_file_name() + '.json'
         if final_save:
