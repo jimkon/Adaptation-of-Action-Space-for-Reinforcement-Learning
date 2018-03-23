@@ -31,6 +31,7 @@ class History:
 
         self._current_episode = 0
         self._current_step = 0
+        self._current_total_steps = 0
         self._current_total_reward = 0
         self._current_episode_ended = False
 
@@ -57,6 +58,9 @@ class History:
 
     def current_total_reward(self):
         return self._current_total_reward
+
+    def current_totatl_steps(self):
+        return self._current_total_steps
 
     def current_action_space(self):
         return self._action_space.get_space()
@@ -85,12 +89,13 @@ class History:
         if self._check_data:
             self._check_step()
 
-        self.print_step_info()
+        # self.print_step_info()
 
         if self._current_step == self.current_episode_lenght() - 1:
             self._current_episode_ended = True
         else:
             self._current_step += 1
+            self._current_total_steps += 1
 
         return not self.is_end_of_episode()
 
@@ -112,9 +117,15 @@ class History:
 
         self._action_space.update()
 
-    def go_to_episode(self, ep):
+    def go_to_episode(self, ep, collect_data_func=None):
+        res = []
         while self._current_episode < ep and not self.is_end():
+            if collect_data_func is not None:
+                res.append(collect_data_func(self))
+
             self.next_episode()
+
+        return res
 
     def _check_step(self):
         # if self.current_action() not in self._knns:
@@ -139,24 +150,45 @@ class History:
                                                         self.current_episode_lenght() - 1,
                                                         self.is_end_of_episode()))
 
-    def plot_current_action_space(self, fig=None):
-        self._action_space._action_space_module.plot(fig)
+    def plot_current_action_space(self):
+        self._action_space._action_space_module.plot()
 
     def plot_current_action_space_distr(self):
-        fig = plt.figure()
-        plt.hist(space, bins=100)
-        plt.grid(True)
-        space = self.current_action_space(fig)
+        space = self.current_action_space()
+        plt.hist(space, bins=100, histtype='step')
 
-        # plt.show()
+        # actions_till_now = []
+        # last_actions = []
+        #
+        # last_prune_i = np.where(np.array(h.data_p.get_prune_episodes()) < self._current_episode)[0]
+        # last_prune = (h.data_p.get_prune_episodes()[last_prune_i[len(
+        #     last_prune_i) - 1]] + 1) if len(last_prune_i) > 0 else 0
+        # print(last_prune)
+        # for ep in self._episodes:
+        #     if ep['id'] > self._current_episode:
+        #         break
+        #     actions_till_now.extend((self._action_space._import_point(action)
+        #                              for action in ep['actors_actions']))
+        #     if ep['id'] >= last_prune:
+        #         last_actions.extend((self._action_space._import_point(action)
+        #                              for action in ep['actors_actions']))
+        #
+        # last_actions = np.array(last_actions).flatten()
+        # plt.hist(last_actions, bins=100, histtype='step')
+        #
+        # actions_till_now = np.array(actions_till_now).flatten()
+        # plt.hist(actions_till_now, bins=100, histtype='step')
+
+        plt.grid(True)
+        plt.show()
 
 
 if __name__ == "__main__":
     # dh = Data_handler('data_10000_Wolp4_Inv127k12#0.json')
     # dh = Data_handler('data_10000_Wolp4_Inv1000k51#0.json.zip')
     # dh = Data_handler('data_10000_Wolp4_Inv255k25#0.json.zip')
-    # h = History('data_2000_Wolp4_Inv2047k204#0.json', check_data=False)
-    h = History('data_100_Wolp4_Inv127k12#0.json.zip', check_data=True)
+    h = History('data_2000_Wolp4_Inv2047k204#0.json', check_data=False)
+    # h = History('data_100_Wolp4_Inv127k12#0.json.zip', check_data=True)
     print("loaded")
     rewards = h.data_p.get_full_episode_rewards()
     print(rewards)
@@ -165,7 +197,7 @@ if __name__ == "__main__":
     for ep in prune_episodes:
         h.go_to_episode(ep)
         h.end_episode()
-        h.plot_current_action_space()
+        # h.plot_current_action_space()
         h.plot_current_action_space_distr()
 
     h.plot_current_action_space()

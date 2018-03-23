@@ -24,7 +24,7 @@ def load(file_name):
 class Data:
 
     PATH = '/home/jim/Desktop/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/results/obj/'
-    AUTOSAVE_BATCH_SIZE = 1000  # 1e5  # 1 mB
+    AUTOSAVE_BATCH_SIZE = 1e5  # 1 mB
 
     DATA_TEMPLATE = '''
     {

@@ -28,7 +28,7 @@ class Node:
             self._level = 0
 
         if np.array_equal(self._low_limit, self._high_limit):
-            print('expansion of', self, 'stopped')
+            # print('expansion of', self, 'stopped')
             raise ArithmeticError('Node: Low == High :{}=={}'.format(
                 self._low_limit, self._high_limit))
 

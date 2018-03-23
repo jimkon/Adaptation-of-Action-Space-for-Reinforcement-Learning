@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+from recreate_history import *
 
 from data import *
 import numpy as np
@@ -102,6 +103,7 @@ def plot_3d_points(points):
 class Data_handler:
 
     def __init__(self, filename):
+        self.filename = filename
         self.data = load(filename)
         self.episodes = self.data.data['simulation']['episodes']
 
@@ -294,8 +296,9 @@ class Data_handler:
         error = np.sqrt(np.sum(np.square(ndn - actors_actions), axis=1))  # square error
         # plt.plot(error, label='error')
         print('Ploting actions might take a while: number of actions to plot {}:'.format(len(ndn)))
-        w_avg = apply_func_to_window(error, 1000, np.average)
-        plt.plot(w_avg, linewidth=1, label='w error')
+        w_avg = apply_func_to_window(error, int(self.get_average_action_space_size()), np.average)
+        plt.plot(w_avg, linewidth=1, label='running avg error(window {})'.format(
+            int(self.get_average_action_space_size())))
 
         avg_error = np.average(error)
         plt.plot([0, len(ndn)], [avg_error] * 2,
@@ -408,13 +411,59 @@ class Data_handler:
         plt.grid(True)
         plt.show()
 
+    def plot_action_space_timeline(self):
+        h = History(self.filename)
+        prune_episodes = h.data_p.get_prune_episodes()
+        print(prune_episodes)
+
+        all_actions = np.array(self.get_episode_data('actors_actions')).flatten()
+        prev_step_for_actions = 0
+        average_action_space = []
+        previous_action_space = None
+        for ep in prune_episodes:
+            actions = h.go_to_episode(ep)
+            h.end_episode()
+            h.print_step_info()
+
+            cur_action_space = h.current_action_space()
+
+            # average_action_space.extend(np.array(cur_action_space).flatten())
+            # plt.hist(average_action_space, bins=1000, histtype='step', label='average')
+
+            plt.hist(cur_action_space,
+                     bins=1000,
+                     linewidth=0.5,
+                     histtype='step',
+                     label='current space')
+
+            actions = []
+            for action in all_actions[prev_step_for_actions:h._current_total_steps - 1]:
+                actions.extend(h._action_space._import_point(action))
+            prev_step_for_actions = h._current_total_steps - 1
+            plt.hist(actions,
+                     bins=1000,
+                     histtype='step',
+                     label='actions')
+
+            if previous_action_space is not None:
+                plt.hist(previous_action_space,
+                         bins=1000,
+                         histtype='step',
+                         label='prev space')
+            previous_action_space = cur_action_space
+
+            plt.grid(True)
+            plt.legend()
+            plt.show()
+
 
 if __name__ == "__main__":
     # dh = Data_handler('data_10000_Wolp4_Inv127k12#0.json')
     # dh = Data_handler('data_10000_Wolp4_Inv1000k51#0.json.zip')
     # dh = Data_handler('data_10000_Wolp4_Inv255k25#0.json.zip')
     # dh = Data_handler('data_5000_Wolp4_Inv10000k1000#0.json.zip')
-    dh = Data_handler('data_100_Wolp4_Inv127k12#0.json.zip')
+    dh = Data_handler('data_2000_Wolp4_Inv8191k819#0.json.zip')
+    # dh = Data_handler('data_100_Wolp4_Inv127k12#0.json.zip')
     print("loaded")
 
     # dh.plot_rewards()
@@ -422,11 +471,12 @@ if __name__ == "__main__":
     # dh.plot_actions()
     # dh.plot_action_distribution()
     # dh.plot_action_distribution_over_time()
-    # dh.plot_discretization_error()
+    dh.plot_discretization_error()
     # dh.plot_actor_critic_error()
     # dh.plot_discretization_error_distribution()
-    print(dh.get_prune_episodes())
+    # dh.plot_action_space_timeline()
+    # print(dh.get_prune_episodes())
 
-    dh.plot_action_space_size()
+    # dh.plot_action_space_size()
     # b, a = dh.create_action_history()
     # print(len(b), len(a))
