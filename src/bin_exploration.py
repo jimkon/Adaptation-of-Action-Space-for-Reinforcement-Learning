@@ -71,25 +71,20 @@ class Node:
 
         return self
 
-    def recursive_pruning(self, min_level, value_threshold):
-        if self.is_leaf():
+    def delete(self):
+        print('delete')
+        if self.is_root():
             return
 
-        for i in range(len(self._branches)):
-            node = self._branches[i]
-            if node is None:
-                continue
-            if node.get_value() <= value_threshold and node.get_level() > min_level:
-                self._branches[i] = None
-            else:
-                node.recursive_pruning(min_level, value_threshold)
+        self._parent._branches.remove(self)
 
-    def recursive_collection(self, result_array, func, cond_func=(lambda node: True)):
-        if not cond_func(self):
+    def recursive_collection(self, result_array, func, traverse_cond_func, collect_cond_func):
+        if not traverse_cond_func(self):
             return
-        result_array.append(func(self))
+        if collect_cond_func(self):
+            result_array.append(func(self))
         for branch in self.get_branches():
-            branch.recursive_collection(result_array, func)
+            branch.recursive_collection(result_array, func, traverse_cond_func, collect_cond_func)
 
     def get_value(self):
         return self._value
@@ -193,38 +188,11 @@ class Exploration_tree:
         self._nodes = [root]
         self._root = root
 
-        # min_actions = int(max(5, self._limit_size * min_size_ratio))
-
-        # self._min_level = Exploration_tree.compute_level(min_actions, self._branch_factor)
         self._min_level = 0
 
         init_level = Exploration_tree.compute_level(avg_nodes, self._branch_factor)
         self._add_layers(init_level)
-
-    def expand_towards(self, point):
-        assert len(point) == self._dimensions, 'input point must have same number of dimensions: {} given point: {}'.format(
-            self._dimensions, point)
-
-        point = Exploration_tree.correct_point(point)
-        node = self.search_nearest_node(point, increase=True)
-        assert node is not None, 'Search return None'
-
-        if node is not None:
-            self._expand_node(node, towards_point=point)
-
-    def prune(self):
-        value_threshold, expected_new_size = self._get_cutoff_value()
-        if value_threshold == -1:
-            return
-
-        self._root.recursive_pruning(self._min_level, value_threshold)
-
-        self._nodes = self.recursive_traversal(lambda node: node)
-
-        assert len(self._nodes) == expected_new_size, """Size after prune is not the expected: {} != {}
-                        """.format(len(self._nodes), expected_new_size)
-
-        self._reset_values()
+        self._refresh_nodes()
 
     def search_nearest_node(self, point, increase=True):
         node = self._root.search(point, increase)
@@ -234,60 +202,60 @@ class Exploration_tree:
         node = self.get_nodes()[index]
         return node
 
-    def recursive_traversal(self, func):
+    def recursive_traversal(self, func=(lambda node: node),
+                            traverse_cond_func=(lambda node: True),
+                            collect_cond_func=(lambda node: True)):
         res = []
-        self._root.recursive_collection(res, func)
+        self._root.recursive_collection(res, func, traverse_cond_func, collect_cond_func)
         return res
 
-    def _expand_node(self, node, towards_point=None, force_expand=False):
-        if not force_expand and node.get_level() > self._min_level and node.get_value() < self.EXPANSION_VALUE_THRESHOLD:
-            return
+    # def _get_cutoff_value(self):
+    #     excess = self.get_size() - self._limit_size
+    #     if excess < 0:
+    #         return -1, self.get_size()
+    #     values = self.recursive_traversal(
+    #         lambda node: node.get_value() if node.get_level() > self._min_level else -1)
+    #
+    #     unique, counts = np.unique(values, return_counts=True)
+    #     counts[0] = 0  # drop the -1
+    #     cumulative = []
+    #     total = 0
+    #     for i in counts:
+    #         total += i
+    #         cumulative.append(total)
+    #
+    #     diff = np.array(cumulative)
+    #     new_size = self.get_size() - diff
+    #     diff_from_pref_size = np.abs(new_size - self._limit_size)
+    #
+    #     argmin = np.argmin(diff_from_pref_size)
+    #     res_value = unique[argmin]
+    #
+    #     return res_value, new_size[argmin]
 
-        new_nodes = node.expand(towards_point)
-        for new_node in new_nodes:
-            self._nodes.append(new_node)
-
-    def _get_cutoff_value(self):
-        excess = self.get_size() - self._limit_size
-        if excess < 0:
-            return -1, self.get_size()
-        values = self.recursive_traversal(
-            lambda node: node.get_value() if node.get_level() > self._min_level else -1)
-
-        unique, counts = np.unique(values, return_counts=True)
-        counts[0] = 0  # drop the -1
-        cumulative = []
-        total = 0
-        for i in counts:
-            total += i
-            cumulative.append(total)
-
-        diff = np.array(cumulative)
-        new_size = self.get_size() - diff
-        diff_from_pref_size = np.abs(new_size - self._limit_size)
-
-        argmin = np.argmin(diff_from_pref_size)
-        res_value = unique[argmin]
-
-        return res_value, new_size[argmin]
+    def get_leaves(self):
+        return self.recursive_traversal(collect_cond_func=(lambda node: node.is_leaf()))
 
     def _reset_values(self):
-        self.recursive_traversal(lambda node: node.reset_value())
+        self.recursive_traversal(func=lambda node: node.reset_value())
 
     def _add_layers(self, n):
         for i in range(n):
             self._add_layer()
 
     def _add_layer(self):
-        current_nodes = np.copy(self.get_nodes())
-        for node in current_nodes:
-            self._expand_node(node, force_expand=True)
+        leaves = self.get_leaves()
+        for node in leaves:
+            node.expand()
 
     def get_nodes(self):
         return self._nodes
 
+    def _refresh_nodes(self):
+        self._nodes = self.recursive_traversal()
+
     def get_points(self):
-        return np.array(self.recursive_traversal(lambda node: node.get_location()))
+        return np.array(list(node.get_location() for node in self.get_nodes()))
 
     def get_size(self):
         return len(self._nodes)
@@ -372,32 +340,34 @@ class Exploration_tree:
 if __name__ == '__main__':
 
     dims = 1
-    tree_size = 1000
+    tree_size = 15
     iterations = 1000
     max_size = 10
 
     tree = Exploration_tree(dims, tree_size)
 
-    samples_size_buffer = np.random.random(iterations) * max_size + 1
-    samples_size_buffer = samples_size_buffer.astype(int)
-
-    count = 0
-    for i in samples_size_buffer:
-        print(count, '----new iteration, searches', i)
-        count += 1
-        samples = np.abs(np.random.standard_normal((i, dims))) * 0.4
-        starting_size = tree.get_size()
-        for p in samples:
-            p = list(p)
-            tree.expand_towards(p)
-
-        ending_size = tree.get_size()
-        # print('added', i, 'points(', samples, '): size before-after', starting_size,
-        #       '-', ending_size, '({})'.format(ending_size - starting_size))
-        if starting_size + i != ending_size:
-            print('ERROR')
-            tree.plot()
-            exit()
-
-        tree.prune()
     tree.plot()
+    print(len(tree.get_leaves()))
+    # samples_size_buffer = np.random.random(iterations) * max_size + 1
+    # samples_size_buffer = samples_size_buffer.astype(int)
+    #
+    # count = 0
+    # for i in samples_size_buffer:
+    #     print(count, '----new iteration, searches', i)
+    #     count += 1
+    #     samples = np.abs(np.random.standard_normal((i, dims))) * 0.4
+    #     starting_size = tree.get_size()
+    #     for p in samples:
+    #         p = list(p)
+    #         tree.expand_towards(p)
+    #
+    #     ending_size = tree.get_size()
+    #     # print('added', i, 'points(', samples, '): size before-after', starting_size,
+    #     #       '-', ending_size, '({})'.format(ending_size - starting_size))
+    #     if starting_size + i != ending_size:
+    #         print('ERROR')
+    #         tree.plot()
+    #         exit()
+    #
+    #     tree.prune()
+    # tree.plot()

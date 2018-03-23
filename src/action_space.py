@@ -42,7 +42,8 @@ class Space:
     def search_point(self, point, k):
         p_in = self._import_point(point)
 
-        self._action_space_module.expand_towards(p_in)
+        self._action_space_module.search_nearest_node(p_in)
+        # self._action_space_module.expand_towards(p_in)
 
         if self.get_size() < k:
             k = self.get_size()
@@ -62,8 +63,7 @@ class Space:
         # action selected for actors action and got reward
         # self._action_space_module.expand_towards(self._import_point(actors_action))
         node = self._action_space_module.get_node(actions_index)
-
-        # self._action_space_module.expand_towards(node.get_location())
+        self._action_space_module.search_nearest_node(node.get_location())
 
     def rebuild_flann(self):
         self._index = self._flann.build_index(np.copy(self.__space), algorithm='kdtree')
