@@ -33,7 +33,7 @@ class Space:
     def update(self):
         self._flann.delete_index()
 
-        self._action_space_module.prune()
+        self._action_space_module.update()
 
         self.__space = self._action_space_module.get_points()
 

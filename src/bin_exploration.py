@@ -111,6 +111,9 @@ class Node:
                 res.append(branch)
         return res
 
+    def number_of_childs(self):
+        return len(self.get_branches())
+
     def is_root(self):
         return self._parent is None
 
@@ -118,7 +121,7 @@ class Node:
         return len(self.get_branches()) == 0
 
     def is_expandable(self):
-        return len(self.get_branches()) < len(self.BRANCH_MATRIX) or self.__achieved_precision_limit
+        return self.number_of_childs() < len(self.BRANCH_MATRIX) or self.__achieved_precision_limit
 
     def increase_value(self):
         self._value += 1
@@ -198,6 +201,41 @@ class Exploration_tree:
         node = self._root.search(point, increase)
         return node
 
+    def update(self):
+        print('------------------UPDATE---------------')
+        to_expand = self.get_expendable_nodes()
+
+        to_cut = self.get_leaf_nodes()
+
+        v_exp = list(node.get_value() for node in to_expand)
+        v_cut = list(node.get_value() for node in to_cut)
+
+        expand_ratio = self._branch_factor - \
+            np.average(list(node.number_of_childs() for node in to_expand))
+        cut_ratio = 1
+        print('expand ration', expand_ratio, 'cut ratio', cut_ratio)
+
+        exp_unique_values, exp_counts = np.unique(v_exp, return_counts=True)
+        cut_unique_values, cut_counts = np.unique(v_cut, return_counts=True)
+
+        print('expand_values\n', exp_unique_values, '\n', exp_counts)
+        print('cut_values\n', cut_unique_values, '\n', cut_counts)
+
+        exp_counts_sum = [0]
+        for i in range(0, len(exp_counts)):
+            exp_counts_sum.append(exp_counts_sum[len(exp_counts_sum) - 1] + exp_counts[i])
+
+        print('exp_counts_sum\n', exp_counts_sum)
+
+        cut_counts_sum = [0]
+        for i in range(0, len(cut_counts)):
+            cut_counts_sum.append(cut_counts_sum[len(cut_counts_sum) - 1] + cut_counts[i])
+
+        print('cut_counts_sum\n', cut_counts_sum)
+
+        self._refresh_nodes()
+        self._reset_values()
+
     def get_node(self, index):
         node = self.get_nodes()[index]
         return node
@@ -233,8 +271,11 @@ class Exploration_tree:
     #
     #     return res_value, new_size[argmin]
 
-    def get_leaves(self):
+    def get_leaf_nodes(self):
         return self.recursive_traversal(collect_cond_func=(lambda node: node.is_leaf()))
+
+    def get_expendable_nodes(self):
+        return self.recursive_traversal(collect_cond_func=(lambda node: node.is_expandable()))
 
     def _reset_values(self):
         self.recursive_traversal(func=lambda node: node.reset_value())
@@ -244,7 +285,7 @@ class Exploration_tree:
             self._add_layer()
 
     def _add_layer(self):
-        leaves = self.get_leaves()
+        leaves = self.get_leaf_nodes()
         for node in leaves:
             node.expand()
 
@@ -280,17 +321,19 @@ class Exploration_tree:
             parent, child = node.get_connection_with_parent()
             r = 0
             b = 0
-            if node.get_value() == 0 and node._parent is not None:
+            # if node.get_value() == 0 and node._parent is not None:
 
-                if node._level > self._min_level and node.get_value() == 0:
-                    b = 255
-                else:
-                    r = 255
+            if node.is_expandable():
+                b = 255
+            if node.is_leaf():
+                r = 255
+
             if self._dimensions == 1:
                 x = [child[0], parent[0]]
                 y = [node._level, node._level - 1]
 
-                plt.plot([x, x], [-0.1, -0.2], '#000000', linewidth=0.5)
+                plt.plot([x, x], [0.1, 0], '#000000', linewidth=0.5)
+
             else:
                 x = [child[0], parent[0]]
                 y = [child[1], parent[1]]
@@ -303,10 +346,28 @@ class Exploration_tree:
             plt.plot(x[0], y[0],
                      '#{:02x}00{:02x}'.format(r, b), marker='.')
 
+        if self._dimensions == 1:
+            f = 0.1
+            hist, _ = np.histogram(self.get_points().flatten(), bins=int(len(nodes) * f))
+
+            hist = hist * f / len(nodes)
+            max_h = np.max(hist)
+
+            plt.plot(np.linspace(0, stop=1, num=len(hist)), hist,
+                     linewidth=0.5, label='density (max {})'.format(max_h))
+
+            v = tree.recursive_traversal(func=(lambda node: node.get_value()),
+                                         collect_cond_func=lambda node: node.is_expandable())
+            max_v = np.max(v)
+            if max_v != 0:
+                plt.plot(np.linspace(0, stop=1, num=len(v)), v /
+                         np.max(v) - 1, label='values (max {})'.format(max_v))
+
         if save:
             plt.savefig("{}/a{}.png".format(path, self.SAVE_ID))
             self.SAVE_ID += 1
         else:
+            plt.legend()
             plt.show()
 
     @staticmethod
@@ -340,34 +401,36 @@ class Exploration_tree:
 if __name__ == '__main__':
 
     dims = 1
-    tree_size = 15
+    tree_size = 127
     iterations = 1000
-    max_size = 10
+    max_size = 100
 
     tree = Exploration_tree(dims, tree_size)
-
-    tree.plot()
-    print(len(tree.get_leaves()))
-    # samples_size_buffer = np.random.random(iterations) * max_size + 1
-    # samples_size_buffer = samples_size_buffer.astype(int)
-    #
-    # count = 0
-    # for i in samples_size_buffer:
-    #     print(count, '----new iteration, searches', i)
-    #     count += 1
-    #     samples = np.abs(np.random.standard_normal((i, dims))) * 0.4
-    #     starting_size = tree.get_size()
-    #     for p in samples:
-    #         p = list(p)
-    #         tree.expand_towards(p)
-    #
-    #     ending_size = tree.get_size()
-    #     # print('added', i, 'points(', samples, '): size before-after', starting_size,
-    #     #       '-', ending_size, '({})'.format(ending_size - starting_size))
-    #     if starting_size + i != ending_size:
-    #         print('ERROR')
-    #         tree.plot()
-    #         exit()
-    #
-    #     tree.prune()
     # tree.plot()
+    samples_size_buffer = np.random.random(iterations) * max_size + 1
+    samples_size_buffer = samples_size_buffer.astype(int)
+
+    count = 0
+    for i in samples_size_buffer:
+        print(count, '----new iteration, searches', i)
+        count += 1
+        samples = np.abs(np.random.standard_normal((i, dims))) * 0.4
+        starting_size = tree.get_size()
+        for p in samples:
+            p = list(p)
+            tree.search_nearest_node(p)
+
+        # ending_size = tree.get_size()
+        # # print('added', i, 'points(', samples, '): size before-after', starting_size,
+        # #       '-', ending_size, '({})'.format(ending_size - starting_size))
+        # if starting_size + i != ending_size:
+        #     print('ERROR')
+        #     tree.plot()
+        #     exit()
+        # tree.plot()
+
+        tree.update()
+        # tree.plot()
+
+        exit()
+    tree.plot()
