@@ -181,7 +181,7 @@ class Exploration_tree:
 
     def __init__(self, dims, avg_nodes, autoprune=True):
 
-        self._limit_size = avg_nodes
+        self._size = avg_nodes
         self._autoprune = autoprune
         self._dimensions = dims
         Node._init_branch_matrix(self._dimensions)
@@ -207,6 +207,7 @@ class Exploration_tree:
 
         to_cut = self.get_leaf_nodes()
 
+        # computing table containing all the possible new tree sizes
         v_exp = list(node.get_value() for node in to_expand)
         v_cut = list(node.get_value() for node in to_cut)
 
@@ -216,22 +217,64 @@ class Exploration_tree:
         print('expand ration', expand_ratio, 'cut ratio', cut_ratio)
 
         exp_unique_values, exp_counts = np.unique(v_exp, return_counts=True)
-        cut_unique_values, cut_counts = np.unique(v_cut, return_counts=True)
+
+        exp_unique_values = np.append(exp_unique_values,
+                                      exp_unique_values[len(exp_unique_values) - 1] + 1)
+        exp_counts = np.append(exp_counts, 0)
 
         print('expand_values\n', exp_unique_values, '\n', exp_counts)
+        for i in range(len(exp_counts) - 2, -1, -1):
+            exp_counts[i] += exp_counts[i + 1]
+
+        exp_counts = exp_counts * expand_ratio
+        print('exp_counts_sum\n', exp_counts)
+
+        cut_unique_values, cut_counts = np.unique(v_cut, return_counts=True)
+
+        cut_unique_values = np.insert(cut_unique_values, 0, -1)
+        cut_counts = np.insert(cut_counts, 0, 0)
+
         print('cut_values\n', cut_unique_values, '\n', cut_counts)
 
-        exp_counts_sum = [0]
-        for i in range(0, len(exp_counts)):
-            exp_counts_sum.append(exp_counts_sum[len(exp_counts_sum) - 1] + exp_counts[i])
+        for i in range(1, len(cut_counts)):
+            cut_counts[i] += cut_counts[i - 1]
 
-        print('exp_counts_sum\n', exp_counts_sum)
+        cut_counts = cut_counts * cut_ratio
+        print('cut_counts_sum\n', cut_counts)
 
-        cut_counts_sum = [0]
-        for i in range(0, len(cut_counts)):
-            cut_counts_sum.append(cut_counts_sum[len(cut_counts_sum) - 1] + cut_counts[i])
+        delta_size_table = []
+        for i in cut_counts:
+            delta_size_table.append(np.copy(exp_counts) - i)
 
-        print('cut_counts_sum\n', cut_counts_sum)
+        delta_size_table = np.array(delta_size_table) + self._size - self.get_current_size()
+
+        print('\nexp', exp_unique_values)
+        count = 0
+        for _ in delta_size_table:
+            print(cut_unique_values[count], ' ', _)
+            count += 1
+
+        # choose a value for cut and expand
+        # valid values only where selected_cut_values<selected_exp_values!!!!
+        selected_exp_index = 1
+        selected_cut_index = 0
+        ########################
+
+        selected_exp_value = exp_unique_values[selected_exp_index]
+        selected_cut_value = cut_unique_values[selected_cut_index]
+
+        print('selected values exp index, value', selected_exp_index, selected_exp_value)
+        print('selected values cut index, value', selected_cut_index, selected_cut_value)
+
+        # expand
+        for node in to_expand:
+            if node.get_value() >= selected_exp_value:
+                node.expand()
+
+        # cut
+        for node in to_cut:
+            if node.get_value <= selected_cut_value:
+                node.delete
 
         self._refresh_nodes()
         self._reset_values()
@@ -302,7 +345,7 @@ class Exploration_tree:
         return len(self._nodes)
 
     def get_limit_size(self):
-        return self._limit_size
+        return self._size
 
     def print_all_nodes(self):
         nodes = self._nodes
