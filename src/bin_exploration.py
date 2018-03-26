@@ -24,6 +24,7 @@ class Node:
 
         if parent is not None:
             self._level = parent._level + 1
+            self._value = parent._value
         else:
             self._level = 0
 
@@ -57,11 +58,10 @@ class Node:
 
         return new_nodes
 
-    def search(self, point, increase=True):
+    def search(self, point, increase=1):
         if not self._covers_point(point):
             return None
-        if increase:
-            self.increase_value()
+        self._value += increase
         if self.is_leaf() or np.array_equal(self.get_location(), point):
             return self
         for branch in self.get_branches():
@@ -72,7 +72,6 @@ class Node:
         return self
 
     def delete(self):
-        print('delete')
         if self.is_root():
             return
 
@@ -122,9 +121,6 @@ class Node:
 
     def is_expandable(self):
         return self.number_of_childs() < len(self.BRANCH_MATRIX) or self.__achieved_precision_limit
-
-    def increase_value(self):
-        self._value += 1
 
     def _covers_point(self, point):
         check1 = self.point_less_or_equal_than_point(self._low_limit, point)
@@ -194,18 +190,130 @@ class Exploration_tree:
         self._min_level = 0
 
         init_level = Exploration_tree.compute_level(avg_nodes, self._branch_factor)
-        self._add_layers(init_level)
-        self._refresh_nodes()
+        for i in range(init_level):
+            self.expand_nodes(0)
+
+        self._total_distance = 0
+        self._total_distance_count = 0
 
     def search_nearest_node(self, point, increase=True):
+
+        point = self.correct_point(point)
+
         node = self._root.search(point, increase)
+
+        self._total_distance += np.linalg.norm(node.get_location() - point)
+        print('dist ', point, node.get_location(), 'is',
+              np.linalg.norm(node.get_location() - point))
+        self._total_distance_count += 1
+
         return node
 
     def update(self):
         print('------------------UPDATE---------------')
+
+        # choose a value for cut and expand
+        # valid values only where selected_cut_values<selected_exp_values!!!!
+        # selected_exp_index = 1
+        # selected_cut_index = 0
+        ########################
+
+        # selected_exp_value = exp_unique_values[selected_exp_index]
+        # selected_cut_value = cut_unique_values[selected_cut_index]
+        # print('selected values exp index, value', selected_exp_index, selected_exp_value)
+        # print('selected values cut index, value', selected_cut_index, selected_cut_value)
+
+        # expand
+        selected_exp_value = self._expand_threshold_value(1)
+
+        print('selected values exp index, value', selected_exp_value)
+        # exit()
+        self.expand_nodes(selected_exp_value)
+        # self.plot()
+        # cut
+        selected_cut_value = min(self._prune_threshold_value(), selected_exp_value - 1)
+        print('selected values cut index, value', selected_cut_value)
+        to_cut = self.get_prunable_nodes()
+        for node in to_cut:
+            if node.get_value() <= selected_cut_value:
+                node.delete()
+        self.plot()
+        # print('expected new size=', delta_size_table[selected_cut_index][selected_exp_index],
+        #       'final size=', self.get_current_size())
+
+        self._refresh_nodes()
+        self._reset_values()
+
+    def get_node(self, index):
+        node = self.get_nodes()[index]
+        return node
+
+    def recursive_traversal(self, func=(lambda node: node),
+                            traverse_cond_func=(lambda node: True),
+                            collect_cond_func=(lambda node: True)):
+        res = []
+        self._root.recursive_collection(res, func, traverse_cond_func, collect_cond_func)
+        return res
+
+    def _prune_threshold_value(self):
+
+        excess = self.get_current_size() - self.get_size()
+        print('size', self.get_size(), excess)
+        if excess <= 0:
+            return -1
+            # return -1, self.get_current_size()
+
+        values = list(node.get_value() for node in self.get_prunable_nodes())
+
+        unique, counts = np.unique(values, return_counts=True)
+        print(unique, counts)
+
+        unique = np.insert(unique, 0, -1)
+        counts = np.insert(counts, 0, 0)
+
+        for i in range(1, len(counts)):
+            counts[i] += counts[i - 1]
+
+        print(unique, counts)
+
+        delta_size = np.abs(counts - excess)
+        print('delta', delta_size)
+
+        result_value = unique[np.argmin(delta_size)]
+        print('result', result_value)
+
+        return result_value
+
+    def _expand_threshold_value(self, reward_factor):
+        mean_distance = self._get_mean_distance()
+        max_mean_distance = self._get_max_mean_distance()
+        distance_factor = mean_distance / max_mean_distance
+
+        factor = min(distance_factor * reward_factor, 1)
+        print('factor', factor, mean_distance, max_mean_distance)
+
+        v_exp = list(node.get_value() for node in self.get_expendable_nodes())
+        exp_unique_values, exp_counts = np.unique(v_exp, return_counts=True)
+
+        # adding max+1 and removing 0
+        exp_unique_values = np.append(exp_unique_values, np.max(exp_unique_values) + 1)
+        exp_unique_values = exp_unique_values if exp_unique_values[0] != 0 else exp_unique_values[1:]
+
+        print(exp_unique_values)
+
+        cont_value = np.interp(factor, [0, 1],
+                               [np.max(exp_unique_values), np.min(exp_unique_values)])
+        print('cont value', cont_value)
+
+        # find closest value to cont_value
+        result_value = exp_unique_values[np.argmin(np.abs(exp_unique_values - cont_value))]
+
+        return result_value
+
+    def compute_delta_size(self):
         to_expand = self.get_expendable_nodes()
 
-        to_cut = self.get_leaf_nodes()
+        to_cut = self.get_prunable_nodes()
 
         # computing table containing all the possible new tree sizes
         v_exp = list(node.get_value() for node in to_expand)
@@ -222,9 +330,12 @@ class Exploration_tree:
                                       exp_unique_values[len(exp_unique_values) - 1] + 1)
         exp_counts = np.append(exp_counts, 0)
 
+        exp_unique_values = np.flip(exp_unique_values, 0)
+        exp_counts = np.flip(exp_counts, 0)
+
         print('expand_values\n', exp_unique_values, '\n', exp_counts)
-        for i in range(len(exp_counts) - 2, -1, -1):
-            exp_counts[i] += exp_counts[i + 1]
+        for i in range(1, len(exp_counts)):
+            exp_counts[i] += exp_counts[i - 1]
 
         exp_counts = exp_counts * expand_ratio
         print('exp_counts_sum\n', exp_counts)
@@ -243,10 +354,16 @@ class Exploration_tree:
         print('cut_counts_sum\n', cut_counts)
 
         delta_size_table = []
-        for i in cut_counts:
-            delta_size_table.append(np.copy(exp_counts) - i)
+        for i in range(len(cut_counts)):
+            max_valid_index = np.where(cut_unique_values[i] == exp_unique_values)[0]
+            if len(max_valid_index) == 0:
+                max_valid_index = len(exp_unique_values)
+            else:
+                max_valid_index = max_valid_index[0]
 
-        delta_size_table = np.array(delta_size_table) + self._size - self.get_current_size()
+            delta_size_table.append(exp_counts[:max_valid_index] - cut_counts[i])
+
+        delta_size_table = np.array(delta_size_table) + self.get_current_size() - self.get_size()
 
         print('\nexp', exp_unique_values)
         count = 0
@@ -254,83 +371,34 @@ class Exploration_tree:
             print(cut_unique_values[count], ' ', _)
             count += 1
 
-        # choose a value for cut and expand
-        # valid values only where selected_cut_values<selected_exp_values!!!!
-        selected_exp_index = 1
-        selected_cut_index = 0
-        ########################
+        return delta_size_table
 
-        selected_exp_value = exp_unique_values[selected_exp_index]
-        selected_cut_value = cut_unique_values[selected_cut_index]
-
-        print('selected values exp index, value', selected_exp_index, selected_exp_value)
-        print('selected values cut index, value', selected_cut_index, selected_cut_value)
-
-        # expand
-        for node in to_expand:
-            if node.get_value() >= selected_exp_value:
-                node.expand()
-
-        # cut
-        for node in to_cut:
-            if node.get_value <= selected_cut_value:
-                node.delete
-
-        self._refresh_nodes()
-        self._reset_values()
-
-    def get_node(self, index):
-        node = self.get_nodes()[index]
-        return node
-
-    def recursive_traversal(self, func=(lambda node: node),
-                            traverse_cond_func=(lambda node: True),
-                            collect_cond_func=(lambda node: True)):
-        res = []
-        self._root.recursive_collection(res, func, traverse_cond_func, collect_cond_func)
-        return res
-
-    # def _get_cutoff_value(self):
-    #     excess = self.get_size() - self._limit_size
-    #     if excess < 0:
-    #         return -1, self.get_size()
-    #     values = self.recursive_traversal(
-    #         lambda node: node.get_value() if node.get_level() > self._min_level else -1)
-    #
-    #     unique, counts = np.unique(values, return_counts=True)
-    #     counts[0] = 0  # drop the -1
-    #     cumulative = []
-    #     total = 0
-    #     for i in counts:
-    #         total += i
-    #         cumulative.append(total)
-    #
-    #     diff = np.array(cumulative)
-    #     new_size = self.get_size() - diff
-    #     diff_from_pref_size = np.abs(new_size - self._limit_size)
-    #
-    #     argmin = np.argmin(diff_from_pref_size)
-    #     res_value = unique[argmin]
-    #
-    #     return res_value, new_size[argmin]
-
-    def get_leaf_nodes(self):
+    def get_prunable_nodes(self):
         return self.recursive_traversal(collect_cond_func=(lambda node: node.is_leaf()))
 
     def get_expendable_nodes(self):
         return self.recursive_traversal(collect_cond_func=(lambda node: node.is_expandable()))
 
+    def _get_mean_distance(self):
+        if self._total_distance_count == 0:
+            return 0
+        result = self._total_distance / self._total_distance_count
+        self._total_distance = 0
+        self._total_distance_count = 0
+        return result
+
+    def _get_max_mean_distance(self):
+        return 1 / (4 * self.get_current_size())
+
     def _reset_values(self):
         self.recursive_traversal(func=lambda node: node.reset_value())
 
-    def _add_layers(self, n):
-        for i in range(n):
-            self._add_layer()
-
-    def _add_layer(self):
-        leaves = self.get_leaf_nodes()
-        for node in leaves:
-            node.expand()
+    def expand_nodes(self, value_threshold):
+        to_expand = self.get_expendable_nodes()
+        for node in to_expand:
+            if node.get_value() >= value_threshold:
+                new_nodes = node.expand()
+                self._nodes.extend(new_nodes)
 
     def get_nodes(self):
         return self._nodes
@@ -341,10 +409,10 @@ class Exploration_tree:
     def get_points(self):
         return np.array(list(node.get_location() for node in self.get_nodes()))
 
-    def get_size(self):
+    def get_current_size(self):
         return len(self._nodes)
 
-    def get_limit_size(self):
+    def get_size(self):
         return self._size
 
     def print_all_nodes(self):
@@ -457,8 +525,8 @@ if __name__ == '__main__':
     for i in samples_size_buffer:
         print(count, '----new iteration, searches', i)
         count += 1
-        samples = np.abs(np.random.standard_normal((i, dims))) * 0.4
-        starting_size = tree.get_size()
+        samples = 0.1 + np.abs(np.random.standard_normal((i, dims))) * 0.1
+        starting_size = tree.get_current_size()
         for p in samples:
             p = list(p)
             tree.search_nearest_node(p)
@@ -473,7 +541,7 @@ if __name__ == '__main__':
         # tree.plot()
 
         tree.update()
-        # tree.plot()
+        tree.plot()
 
         exit()
     tree.plot()
