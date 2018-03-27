@@ -15,6 +15,7 @@ action_space_run_simulation.py
 show_results_temp.py
 action_space_old.py
 la_actor_tester.py
+bin_exp_test.py
 
 
 # .pyc files

@@ -60,22 +60,24 @@ class Node:
 
     def search(self, point, increase=1):
         if not self._covers_point(point):
-            return None
-        self._value += increase
-        if self.is_leaf() or np.array_equal(self.get_location(), point):
-            return self
-        for branch in self.get_branches():
-            res = branch.search(point, increase)
-            if res is not None:
-                return res
+            return None, 0
 
-        return self
+        dist = np.linalg.norm(self._location - point)
+        self._value += increase
+        # if self.is_leaf() or np.array_equal(self.get_location(), point):
+        #     return self, dist
+        for branch in self.get_branches():
+            res, branch_dist = branch.search(point, increase)
+            if res is not None:
+                return res, min(dist, branch_dist)
+
+        return self, dist
 
     def delete(self):
         if self.is_root():
             return
-
-        self._parent._branches.remove(self)
+        # uncaught exception !!!!
+        self._parent._branches[self._parent._branches.index(self)] = None
 
     def recursive_collection(self, result_array, func, traverse_cond_func, collect_cond_func):
         if not traverse_cond_func(self):
@@ -86,7 +88,7 @@ class Node:
             branch.recursive_collection(result_array, func, traverse_cond_func, collect_cond_func)
 
     def get_value(self):
-        return self._value
+        return int(round(self._value))
 
     def reset_value(self):
         self._value = 0
@@ -200,17 +202,18 @@ class Exploration_tree:
 
         point = self.correct_point(point)
 
-        node = self._root.search(point, increase)
+        node, dist = self._root.search(point, increase)
 
-        self._total_distance += np.linalg.norm(node.get_location() - point)
-        print('dist ', point, node.get_location(), 'is',
-              np.linalg.norm(node.get_location() - point))
+        self._total_distance += dist
+        #np.linalg.norm(node.get_location() - point)
+        # print('dist ', point, node.get_location(), 'is',
+        #       np.linalg.norm(node.get_location() - point))
         self._total_distance_count += 1
 
         return node
 
-    def update(self):
-        print('------------------UPDATE---------------')
+    def update(self, reward_factor=1):
+        # print('------------------UPDATE---------------')
 
         # choose a value for cut and expand
         # valid values only where selected_cut_values<selected_exp_values!!!!
@@ -224,7 +227,7 @@ class Exploration_tree:
         # print('selected values cut index, value', selected_cut_index, selected_cut_value)
 
         # expand
-        selected_exp_value = self._expand_threshold_value(1)
+        selected_exp_value = self._expand_threshold_value(reward_factor)
 
         print('selected values exp index, value', selected_exp_value)
         # exit()
@@ -237,7 +240,7 @@ class Exploration_tree:
         for node in to_cut:
             if node.get_value() <= selected_cut_value:
                 node.delete()
-        self.plot()
+        # self.plot()
         # print('expected new size=', delta_size_table[selected_cut_index][selected_exp_index],
         #       'final size=', self.get_current_size())
 
@@ -258,7 +261,7 @@ class Exploration_tree:
     def _prune_threshold_value(self):
 
         excess = self.get_current_size() - self.get_size()
-        print('size', self.get_size(), excess)
+        # print('size', self.get_current_size(), excess)
         if excess <= 0:
             return -1
             # return -1, self.get_current_size()
@@ -266,7 +269,7 @@ class Exploration_tree:
         values = list(node.get_value() for node in self.get_prunable_nodes())
 
         unique, counts = np.unique(values, return_counts=True)
-        print(unique, counts)
+        # print(unique, counts)
 
         unique = np.insert(unique, 0, -1)
         counts = np.insert(counts, 0, 0)
@@ -274,13 +277,13 @@ class Exploration_tree:
         for i in range(1, len(counts)):
             counts[i] += counts[i - 1]
 
-        print(unique, counts)
+        # print(unique, counts)
 
         delta_size = np.abs(counts - excess)
-        print('delta', delta_size)
+        # print('delta', delta_size)
 
         result_value = unique[np.argmin(delta_size)]
-        print('result', result_value)
+        # print('result', result_value)
 
         return result_value
 
@@ -290,7 +293,7 @@ class Exploration_tree:
         distance_factor = mean_distance / max_mean_distance
 
         factor = min(distance_factor * reward_factor, 1)
-        print('factor', factor, mean_distance, max_mean_distance)
+        # print('factor', factor, mean_distance, max_mean_distance)
 
         v_exp = list(node.get_value() for node in self.get_expendable_nodes())
         exp_unique_values, exp_counts = np.unique(v_exp, return_counts=True)
@@ -299,11 +302,11 @@ class Exploration_tree:
         exp_unique_values = np.append(exp_unique_values, np.max(exp_unique_values) + 1)
         exp_unique_values = exp_unique_values if exp_unique_values[0] != 0 else exp_unique_values[1:]
 
-        print(exp_unique_values)
+        # print(exp_unique_values)
 
         cont_value = np.interp(factor, [0, 1],
                                [np.max(exp_unique_values), np.min(exp_unique_values)])
-        print('cont value', cont_value)
+        # print('cont value', cont_value)
 
         # find closest value to cont_value
         result_value = exp_unique_values[np.argmin(np.abs(exp_unique_values - cont_value))]
@@ -383,8 +386,7 @@ class Exploration_tree:
         if self._total_distance_count == 0:
             return 0
         result = self._total_distance / self._total_distance_count
-        self._total_distance = 0
-        self._total_distance_count = 0
+
         return result
 
     def _get_max_mean_distance(self):
@@ -392,6 +394,8 @@ class Exploration_tree:
 
     def _reset_values(self):
         self.recursive_traversal(func=lambda node: node.reset_value())
+        self._total_distance = 0
+        self._total_distance_count = 0
 
     def expand_nodes(self, value_threshold):
         to_expand = self.get_expendable_nodes()
@@ -426,24 +430,24 @@ class Exploration_tree:
     def plot(self, save=False, path='/home/jim/Desktop/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/results/pics'):
         nodes = self.get_nodes()
         # plt.figure()
-        plt.grid(True)
-        print('nodes to plot:', len(nodes))
+        # print('nodes to plot:', len(nodes))
+        plt.title('tree size={}'.format(len(nodes)))
         for node in nodes:
             parent, child = node.get_connection_with_parent()
             r = 0
             b = 0
             # if node.get_value() == 0 and node._parent is not None:
 
-            if node.is_expandable():
-                b = 255
-            if node.is_leaf():
-                r = 255
+            # if node.is_expandable():
+            #     b = 255
+            # if node.is_leaf():
+            #     r = 255
 
             if self._dimensions == 1:
                 x = [child[0], parent[0]]
                 y = [node._level, node._level - 1]
 
-                plt.plot([x, x], [0.1, 0], '#000000', linewidth=0.5)
+                plt.plot([x, x], [-0.1, -0.2], '#000000', linewidth=0.5)
 
             else:
                 x = [child[0], parent[0]]
@@ -457,29 +461,37 @@ class Exploration_tree:
             plt.plot(x[0], y[0],
                      '#{:02x}00{:02x}'.format(r, b), marker='.')
 
-        if self._dimensions == 1:
-            f = 0.1
-            hist, _ = np.histogram(self.get_points().flatten(), bins=int(len(nodes) * f))
+        # if self._dimensions == 1:
+        #     # f = 0.1
+        #     # hist, x_h = np.histogram(self.get_points().flatten(), bins=int(len(nodes) * f))
+        #     # x_h = list((x_h[i] + x_h[i - 1]) / 2 for i in range(1, len(x_h)))
+        #     # hist = hist * f / len(nodes)
+        #     # max_h = np.max(hist)
+        #     # hist = hist / max_h
+        #     # plt.plot(x_h, hist,
+        #     #          linewidth=1, label='density (max {})'.format(max_h))
+        #
+        #     v = self.recursive_traversal(func=(lambda node: node.get_value()),
+        #                                  collect_cond_func=lambda node: node.is_expandable())
+        #     x = sorted(self.recursive_traversal(func=(lambda node: node.get_location()),
+        #                                         collect_cond_func=lambda node: node.is_expandable()))
+        #     ev = self._expand_threshold_value(1) - .5
+        #     max_v = np.max(v)
+        #     if max_v != 0:
+        #         plt.plot(x, v /
+        #                  np.max(v) - 1, label='values (max {})'.format(max_v))
+        #         plt.plot([x[0], x[len(x) - 1]], [ev / np.max(v) - 1] * 2,
+        #                  label='expansion threshold = {}(f={})'.format(ev + 0.5, self._get_mean_distance() / self._get_max_mean_distance()), linewidth=0.8)
 
-            hist = hist * f / len(nodes)
-            max_h = np.max(hist)
-
-            plt.plot(np.linspace(0, stop=1, num=len(hist)), hist,
-                     linewidth=0.5, label='density (max {})'.format(max_h))
-
-            v = tree.recursive_traversal(func=(lambda node: node.get_value()),
-                                         collect_cond_func=lambda node: node.is_expandable())
-            max_v = np.max(v)
-            if max_v != 0:
-                plt.plot(np.linspace(0, stop=1, num=len(v)), v /
-                         np.max(v) - 1, label='values (max {})'.format(max_v))
-
+        # plt.legend()
+        plt.grid(True)
+        plt.xlim(-.1, 1.1)
         if save:
             plt.savefig("{}/a{}.png".format(path, self.SAVE_ID))
             self.SAVE_ID += 1
         else:
-            plt.legend()
             plt.show()
+        plt.gcf().clear()
 
     @staticmethod
     def compute_level(n, branches_of_each_node):
@@ -510,38 +522,42 @@ class Exploration_tree:
 
 
 if __name__ == '__main__':
-
-    dims = 1
-    tree_size = 127
-    iterations = 1000
-    max_size = 100
-
-    tree = Exploration_tree(dims, tree_size)
-    # tree.plot()
-    samples_size_buffer = np.random.random(iterations) * max_size + 1
-    samples_size_buffer = samples_size_buffer.astype(int)
-
-    count = 0
-    for i in samples_size_buffer:
-        print(count, '----new iteration, searches', i)
-        count += 1
-        samples = 0.1 + np.abs(np.random.standard_normal((i, dims))) * 0.1
-        starting_size = tree.get_current_size()
-        for p in samples:
-            p = list(p)
-            tree.search_nearest_node(p)
-
-        # ending_size = tree.get_size()
-        # # print('added', i, 'points(', samples, '): size before-after', starting_size,
-        # #       '-', ending_size, '({})'.format(ending_size - starting_size))
-        # if starting_size + i != ending_size:
-        #     print('ERROR')
-        #     tree.plot()
-        #     exit()
-        # tree.plot()
-
-        tree.update()
-        tree.plot()
-
-        exit()
-    tree.plot()
+    from bin_exp_test import test
+    test()
+    # dims = 1
+    # tree_size = 127
+    # iterations = 100
+    # max_size = 20
+    #
+    # tree = Exploration_tree(dims, tree_size)
+    # # tree.plot()
+    # samples_size_buffer = np.random.random(iterations) * max_size + 10
+    # samples_size_buffer = samples_size_buffer.astype(int)
+    #
+    # samples = None
+    # count = 0
+    # for i in samples_size_buffer:
+    #     print(count, '----new iteration, searches', i)
+    #     count += 1
+    #
+    #     center = 0.1  # if count < 40 else .7
+    #     samples = center + np.abs(np.random.standard_normal((i, dims))) * 0.05
+    #     starting_size = tree.get_current_size()
+    #     for p in samples:
+    #         p = list(p)
+    #         tree.search_nearest_node(p)
+    #
+    #     # ending_size = tree.get_size()
+    #     # # print('added', i, 'points(', samples, '): size before-after', starting_size,
+    #     # #       '-', ending_size, '({})'.format(ending_size - starting_size))
+    #     # if starting_size + i != ending_size:
+    #     #     print('ERROR')
+    #     #     tree.plot()
+    #     #     exit()
+    #     tree.plot()
+    #
+    #     tree.update()
+    #     # tree.plot()
+    #
+    #     # exit()
+    # # tree.plot()
