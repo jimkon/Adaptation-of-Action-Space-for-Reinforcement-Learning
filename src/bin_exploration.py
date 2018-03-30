@@ -206,23 +206,23 @@ class Exploration_tree:
         node, dist = self._root.search(point, increase)
 
         self._total_distance += dist
-        #np.linalg.norm(node.get_location() - point)
-        # print('dist ', point, node.get_location(), 'is',
-        #       np.linalg.norm(node.get_location() - point))
+
         self._total_distance_count += 1
 
         return node
 
     def update(self, reward_factor=1):
         # print('------------------UPDATE---------------')
+        debug_flag = False
 
-        nodes = list(({'loc': node.get_location()[0], 'v': node.get_value()}
-                      for node in self.get_expendable_nodes()))
-        nodes = sorted(nodes, key=lambda node: node['loc'])
-        points = list(item['loc'] for item in nodes)
-        values = list(item['v'] for item in nodes)
-        max_v = np.max(values)
-        plt.plot(points, values, 'b^--', label='values (max={})'.format(max_v))
+        if debug_flag:
+            nodes = list(({'loc': node.get_location()[0], 'v': node.get_value()}
+                          for node in self.get_expendable_nodes()))
+            nodes = sorted(nodes, key=lambda node: node['loc'])
+            points = list(item['loc'] for item in nodes)
+            values = list(item['v'] for item in nodes)
+            max_v = np.max(values)
+            plt.plot(points, values, 'b^--', label='values (max={})'.format(max_v))
 
         # find the expand value
         selected_exp_value = self._expand_threshold_value(reward_factor)
@@ -245,30 +245,29 @@ class Exploration_tree:
                 node.delete()
 
         # self.plot()
-        # print('expected new size=', delta_size_table[selected_cut_index][selected_exp_index],
-        #       'final size=', self.get_current_size())
 
         self._refresh_nodes()
 
         ######
-        nodes = list(({'loc': node.get_location()[0], 'v': node.get_value()}
-                      for node in self.get_expendable_nodes()))
-        nodes = sorted(nodes, key=lambda node: node['loc'])
-        points = list(item['loc'] for item in nodes)
-        values = list(item['v'] for item in nodes)
-        max_v = np.max(values)
-        # values = values / max_v
-        # values = apply_func_to_window(values, int(.1 * len(values)), np.average)
+        if debug_flag:
+            nodes = list(({'loc': node.get_location()[0], 'v': node.get_value()}
+                          for node in self.get_expendable_nodes()))
+            nodes = sorted(nodes, key=lambda node: node['loc'])
+            points = list(item['loc'] for item in nodes)
+            values = list(item['v'] for item in nodes)
+            max_v = np.max(values)
+            # values = values / max_v
+            # values = apply_func_to_window(values, int(.1 * len(values)), np.average)
 
-        plt.plot([0, 1], [selected_exp_value, selected_exp_value],
-                 'g', label='exp = {}'.format(selected_exp_value))
+            plt.plot([0, 1], [selected_exp_value, selected_exp_value],
+                     'g', label='exp = {}'.format(selected_exp_value))
 
-        plt.plot([0, 1], [selected_cut_value, selected_cut_value],
-                 'r', label='cut = {}'.format(selected_cut_value))
-        plt.plot(points, values, 'mv--', label='values (max={})'.format(max_v))
-        plt.grid(True)
-        plt.legend()
-        plt.show()
+            plt.plot([0, 1], [selected_cut_value, selected_cut_value],
+                     'r', label='cut = {}'.format(selected_cut_value))
+            plt.plot(points, values, 'mv--', label='values (max={})'.format(max_v))
+            plt.grid(True)
+            plt.legend()
+            plt.show()
         ####
 
         self._reset_values()
