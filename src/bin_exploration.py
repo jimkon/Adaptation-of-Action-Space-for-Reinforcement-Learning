@@ -280,7 +280,6 @@ class Exploration_tree:
     def _prune_threshold_value(self, max_threshold=np.inf):
 
         excess = self.get_current_size() - self.get_size()
-        # print('size,excess', self.get_current_size(), excess)
         if excess <= 0:
             return -1
 
@@ -289,7 +288,7 @@ class Exploration_tree:
         unique, counts = np.unique(values, return_counts=True)
 
         valid_values_indexex = np.where(unique < max_threshold)[0]
-        # print('valid_values', valid_values_indexex)
+
         unique = unique[valid_values_indexex]
         counts = counts[valid_values_indexex]
 
@@ -299,12 +298,9 @@ class Exploration_tree:
         for i in range(1, len(counts)):
             counts[i] += counts[i - 1]
 
-        # print(unique, counts)
-
         delta_size = np.abs(counts - excess)
 
         result_value = unique[np.argmin(delta_size)]
-        # print('delta', delta_size, '\nvalues', unique, 'result', result_value)
 
         return result_value
 
