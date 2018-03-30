@@ -308,32 +308,15 @@ class Exploration_tree:
 
         return result_value
 
-    def _expand_threshold_value(self, reward_factor):
+    def _expand_threshold_value(self, factor=1):
 
-        evaluation_factor = self._evaluate()
-        factor = min(evaluation_factor * reward_factor, 1)
-        # print('factor', factor, mean_distance, max_mean_distance)
+        factor = max(factor, .01)
 
         v_exp = list(node.get_value() for node in self.get_expendable_nodes())
+
         avg_v = np.average(v_exp)
-        # avg_v = self._get_mean_distance()
-        # print(avg_v, self._get_mean_distance())
-        # exit()
-        # exp_unique_values, exp_counts = np.unique(v_exp, return_counts=True)
-        #
-        # # adding max+1 and removing 0
-        # exp_unique_values = np.append(exp_unique_values, np.max(exp_unique_values) + 1)
-        # exp_unique_values = exp_unique_values if exp_unique_values[0] != 0 else exp_unique_values[1:]
-        #
-        # # print(exp_unique_values)
-        #
-        # cont_value = np.interp(factor, [0, 1],
-        #                        [np.max(exp_unique_values), np.min(exp_unique_values)])
-        # # print('cont value', cont_value)
-        #
-        # # find closest value to cont_value
-        # result_value = exp_unique_values[np.argmin(np.abs(exp_unique_values - cont_value))]
-        result_value = avg_v
+
+        result_value = avg_v / factor
 
         return result_value
 
@@ -353,69 +336,6 @@ class Exploration_tree:
         res = []
         self._root.recursive_collection(res, func, traverse_cond_func, collect_cond_func)
         return res
-
-    # def compute_delta_size(self):
-    #     to_expand = self.get_expendable_nodes()
-    #
-    #     to_cut = self.get_prunable_nodes()
-    #
-    #     # computing table containing all the possible new tree sizes
-    #     v_exp = list(node.get_value() for node in to_expand)
-    #     v_cut = list(node.get_value() for node in to_cut)
-    #
-    #     expand_ratio = self._branch_factor - \
-    #         np.average(list(node.number_of_childs() for node in to_expand))
-    #     cut_ratio = 1
-    #     print('expand ration', expand_ratio, 'cut ratio', cut_ratio)
-    #
-    #     exp_unique_values, exp_counts = np.unique(v_exp, return_counts=True)
-    #
-    #     exp_unique_values = np.append(exp_unique_values,
-    #                                   exp_unique_values[len(exp_unique_values) - 1] + 1)
-    #     exp_counts = np.append(exp_counts, 0)
-    #
-    #     exp_unique_values = np.flip(exp_unique_values, 0)
-    #     exp_counts = np.flip(exp_counts, 0)
-    #
-    #     print('expand_values\n', exp_unique_values, '\n', exp_counts)
-    #     for i in range(1, len(exp_counts)):
-    #         exp_counts[i] += exp_counts[i - 1]
-    #
-    #     exp_counts = exp_counts * expand_ratio
-    #     print('exp_counts_sum\n', exp_counts)
-    #
-    #     cut_unique_values, cut_counts = np.unique(v_cut, return_counts=True)
-    #
-    #     cut_unique_values = np.insert(cut_unique_values, 0, -1)
-    #     cut_counts = np.insert(cut_counts, 0, 0)
-    #
-    #     print('cut_values\n', cut_unique_values, '\n', cut_counts)
-    #
-    #     for i in range(1, len(cut_counts)):
-    #         cut_counts[i] += cut_counts[i - 1]
-    #
-    #     cut_counts = cut_counts * cut_ratio
-    #     print('cut_counts_sum\n', cut_counts)
-    #
-    #     delta_size_table = []
-    #     for i in range(len(cut_counts)):
-    #         max_valid_index = np.where(cut_unique_values[i] == exp_unique_values)[0]
-    #         if len(max_valid_index) == 0:
-    #             max_valid_index = len(exp_unique_values)
-    #         else:
-    #             max_valid_index = max_valid_index[0]
-    #
-    #         delta_size_table.append(exp_counts[:max_valid_index] - cut_counts[i])
-    #
-    #     delta_size_table = np.array(delta_size_table) + self.get_current_size() - self.get_size()
-    #
-    #     print('\nexp', exp_unique_values)
-    #     count = 0
-    #     for _ in delta_size_table:
-    #         print(cut_unique_values[count], ' ', _)
-    #         count += 1
-    #
-    #     return delta_size_table
 
     def get_prunable_nodes(self):
         return self.recursive_traversal(collect_cond_func=(lambda node: node.is_leaf()))
