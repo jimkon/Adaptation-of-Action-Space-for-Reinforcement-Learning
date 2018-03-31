@@ -60,20 +60,19 @@ class Node:
 
         return new_nodes
 
-    def search(self, point, increase=1):
+    def search(self, point, min_dist_till_now=1):
         if not self._covers_point(point):
             return None, 0
 
-        # print(point)
         dist_to_self = np.linalg.norm(self._location - point)
-        # self._value += dist_to_self
 
-        # print('dist to', self, '=', dist_to_self)
+        if min_dist_till_now > dist_to_self:
+            min_dist_till_now = dist_to_self
 
         branches = self.get_branches()
         for branch_i in range(len(branches)):
             branch = branches[branch_i]
-            res, branch_dist = branch.search(point, increase)
+            res, branch_dist = branch.search(point, min_dist_till_now)
             if res is not None:
                 # print('dist to child', branch, '=', branch_dist)
 
@@ -84,7 +83,8 @@ class Node:
                     self._value_without_branch[branch_i] += dist_to_self
                     return res, branch_dist
 
-        self._value += dist_to_self
+        # print(self, point, dist_to_self if min_dist_till_now == dist_to_self else 0)
+        self._value += dist_to_self if min_dist_till_now == dist_to_self else 0
         return self, dist_to_self
 
     def delete(self):
@@ -103,6 +103,8 @@ class Node:
 
     def get_value(self):
         return self._value
+
+    # def
 
     def reset_value(self):
         self._value = 0
@@ -402,6 +404,7 @@ class Exploration_tree:
         # plt.figure()
         # print('nodes to plot:', len(nodes))
         plt.title('tree size={}'.format(len(nodes)))
+        plt.plot([0, 1], [0, 0], '|', linewidth=2)
         for node in nodes:
             parent, child = node.get_connection_with_parent()
             r = 0
