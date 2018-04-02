@@ -319,6 +319,12 @@ class Data_handler:
         ndn = np.array(self.get_episode_data('ndn_actions'))
         actors_actions = np.array(self.get_episode_data('actors_actions'))
 
+        inv_idexes = np.where(actors_actions > 3)[0]
+        np.put(actors_actions, inv_idexes, np.ones(len(inv_idexes)) * 3)
+
+        inv_idexes = np.where(actors_actions < -3)[0]
+        np.put(actors_actions, inv_idexes, np.ones(len(inv_idexes)) * -3)
+
         size = len(actors_actions)
 
         error = np.sqrt(np.sum(np.square(ndn - actors_actions), axis=1))  # square error
@@ -347,9 +353,9 @@ class Data_handler:
         weighted_error = apply_func_to_window(weighted_error, int(size * 0.01), np.average)
         plt.plot(sorted_actions, weighted_error, linewidth=1, label='weighted error distr')
 
-        argmin = np.argmin(w_error)
-        plt.plot(sorted_actions[argmin], w_error[argmin],
-                 'bo', linewidth=1, label='min={}'.format(w_error[argmin]))
+        # argmin = np.argmin(w_error)
+        # plt.plot(sorted_actions[argmin], w_error[argmin],
+        #          'bo', linewidth=1, label='min={}'.format(w_error[argmin]))
 
         avg = np.average(error)
         plt.plot([sorted_actions[0], sorted_actions[size - 1]],
@@ -462,7 +468,7 @@ if __name__ == "__main__":
     # dh = Data_handler('data_10000_Wolp4_Inv1000k51#0.json.zip')
     # dh = Data_handler('data_10000_Wolp4_Inv255k25#0.json.zip')
     # dh = Data_handler('data_5000_Wolp4_Inv10000k1000#0.json.zip')
-    dh = Data_handler('data_2000_Wolp4_Inv8191k819#0.json.zip')
+    dh = Data_handler('data_2000_Wolp4_Inv511k51#0.json.zip')
     # dh = Data_handler('data_100_Wolp4_Inv127k12#0.json.zip')
     print("loaded")
 
@@ -471,9 +477,9 @@ if __name__ == "__main__":
     # dh.plot_actions()
     # dh.plot_action_distribution()
     # dh.plot_action_distribution_over_time()
-    dh.plot_discretization_error()
+    # dh.plot_discretization_error()
     # dh.plot_actor_critic_error()
-    # dh.plot_discretization_error_distribution()
+    dh.plot_discretization_error_distribution()
     # dh.plot_action_space_timeline()
     # print(dh.get_prune_episodes())
 

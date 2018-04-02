@@ -230,8 +230,8 @@ class Exploration_tree:
         # expand nodes with values greater or equal to the choosen one
         self.expand_nodes(selected_exp_value)
         size_after = self.get_current_size()
-        print('selected values exp index, value', selected_exp_value,
-              '# new nodes', size_after - size_before)
+        # print('selected values exp index, value', selected_exp_value,
+        #       '# new nodes', size_after - size_before)
 
         # find the cut value
         selected_cut_value = self._prune_threshold_value(max_threshold=selected_exp_value)
@@ -273,8 +273,8 @@ class Exploration_tree:
         self._reset_values()
 
         size_after = self.get_current_size()
-        print('selected values cut index, value', selected_cut_value,
-              '# deleted nodes', size_after - size_before)
+        # print('selected values cut index, value', selected_cut_value,
+        #       '# deleted nodes', size_after - size_before)
 
     def _prune_threshold_value(self, max_threshold=np.inf):
 

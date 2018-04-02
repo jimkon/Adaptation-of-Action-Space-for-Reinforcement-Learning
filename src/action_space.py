@@ -3,7 +3,7 @@ import itertools
 import pyflann
 
 import matplotlib.pyplot as plt
-from util.data_process import plot_3d_points
+# from util.data_process import plot_3d_points
 import bin_exploration
 
 
@@ -45,8 +45,8 @@ class Space:
         self._action_space_module.search_nearest_node(p_in)
         # self._action_space_module.expand_towards(p_in)
 
-        if self.get_size() < k:
-            k = self.get_size()
+        if self.get_current_size() < k:
+            k = self.get_current_size()
         indexes, _ = self._flann.nn_index(p_in, k)
 
         knns = self.__space[indexes]
@@ -62,8 +62,9 @@ class Space:
     def action_selected(self, actions_index):
         # action selected for actors action and got reward
         # self._action_space_module.expand_towards(self._import_point(actors_action))
-        node = self._action_space_module.get_node(actions_index)
-        self._action_space_module.search_nearest_node(node.get_location())
+        # node = self._action_space_module.get_node(actions_index)
+        # self._action_space_module.search_nearest_node(node.get_location())
+        pass
 
     def rebuild_flann(self):
         self._index = self._flann.build_index(np.copy(self.__space), algorithm='kdtree')
@@ -78,10 +79,10 @@ class Space:
         return self.__space
 
     def get_current_size(self):
-        return self._action_space_module.get_size()
+        return self._action_space_module.get_current_size()
 
     def get_size(self):
-        return self._action_space_module.get_limit_size()
+        return self._action_space_module.get_size()
 
     def shape(self):
         return self.__space.shape
