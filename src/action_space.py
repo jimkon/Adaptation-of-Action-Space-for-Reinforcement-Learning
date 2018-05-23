@@ -1,10 +1,14 @@
+#!/usr/bin/python3
 import numpy as np
 import itertools
 import pyflann
 
 import matplotlib.pyplot as plt
-# from util.data_process import plot_3d_points
-import bin_exploration
+
+import sys
+sys.path.insert(0, '/home/jim/Desktop/dip/Adaptive-Discretization/src/')
+
+import ntree
 
 
 """
@@ -22,8 +26,8 @@ class Space:
         self._range = self._high - self._low
         self._dimensions = len(low)
 
-        self._action_space_module = bin_exploration.Exploration_tree(
-            self._dimensions, points, autoprune=True)
+        self._action_space_module = ntree.Tree(self._dimensions, points)
+        # self._action_space_module.plot(save=True)
 
         self.__space = self._action_space_module.get_points()
 
@@ -31,19 +35,20 @@ class Space:
         self.rebuild_flann()
 
     def update(self):
-        self._flann.delete_index()
+        changed = self._action_space_module.update()
 
-        self._action_space_module.update()
+        if changed:
+            # self._action_space_module.plot(save=True)
+            self._flann.delete_index()
 
-        self.__space = self._action_space_module.get_points()
+            self.__space = self._action_space_module.get_points()
 
-        self.rebuild_flann()
+            self.rebuild_flann()
 
     def search_point(self, point, k):
         p_in = self._import_point(point)
 
         self._action_space_module.search_nearest_node(p_in)
-        # self._action_space_module.expand_towards(p_in)
 
         if self.get_current_size() < k:
             k = self.get_current_size()
@@ -57,7 +62,13 @@ class Space:
 
         if k == 1:
             p_out = [p_out]
-        return np.array(p_out), indexes[0]
+
+        if len(indexes.shape) == 2:
+            index_out = indexes[0]
+        else:
+            index_out = indexes
+
+        return np.array(p_out), index_out
 
     def action_selected(self, actions_index):
         # action selected for actors action and got reward
