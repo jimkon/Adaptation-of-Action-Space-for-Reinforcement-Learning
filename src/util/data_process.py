@@ -276,9 +276,9 @@ class Data_handler:
         res = []
         count = 0
         for batch in batches:
-            hist, bins = np.histogram(batch, bins=np.linspace(low, high, n_bins))
+            hist, bins = np.histogram(batch, bins=np.linspace(low, high, n_bins + 1))
             count += 1
-            plt.plot(bins[1:], hist, linewidth=1, label='t={}%'.format(
+            plt.plot(np.linspace(bins[0], bins[len(bins) - 1], n_bins), hist, linewidth=1, label='t={}%'.format(
                 100 * count / number_of_batches))
             # plt.hist(batch, bins=30, histtype='stepfilled', label=str(count))
 

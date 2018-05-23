@@ -7,11 +7,14 @@ import action_space
 
 class WolpertingerAgent(agent.DDPGAgent):
 
-    def __init__(self, env, max_actions=1e5, k_ratio=0.1):
+    ACTION_SPACE_SAMPLE_BUFFER_SIZE = 10000
+
+    def __init__(self, env, max_actions=1e5, k_ratio=0.1, adapted_action_space=True):
         super().__init__(env)
         self.experiment = env.spec.id
         if self.continious_action_space:
-            self.action_space = action_space.Space(self.low, self.high, max_actions)
+            self.action_space = action_space.Space(
+                self.low, self.high, max_actions)
             # max_actions = self.action_space.get_number_of_actions()
         else:
             print("this version doesn't work for discrete actions spaces")
@@ -19,8 +22,11 @@ class WolpertingerAgent(agent.DDPGAgent):
 
         self.k_nearest_neighbors = max(1, int(max_actions * k_ratio))
 
+        self.adapted_action_space = adapted_action_space
+        self.sample_count = 0
+
     def get_name(self):
-        return 'Wolp4_{}k{}_{}'.format(self.action_space.get_size(),
+        return 'Wolp5_{}k{}_{}'.format(self.action_space.get_size(),
                                        self.k_nearest_neighbors, self.experiment)
 
     def get_action_space(self):
@@ -41,7 +47,11 @@ class WolpertingerAgent(agent.DDPGAgent):
         if episode['done'] == 1:
             min_action_space_size = self.action_space.get_current_size()
 
-            self.action_space.update()
+            if self.adapted_action_space and self.sample_count > self.ACTION_SPACE_SAMPLE_BUFFER_SIZE:
+                print("Adapting action space")
+                self.action_space.update()
+                self.sample_count = 0
+                print('new action space:\n', self.action_space.get_space())
 
             max_action_space_size = self.action_space.get_current_size()
             self.data_fetch.set_action_space_size(min_action_space_size, max_action_space_size)
@@ -49,6 +59,7 @@ class WolpertingerAgent(agent.DDPGAgent):
     def wolp_action(self, state, proto_action):
         # get the proto_action's k nearest neighbors
         actions, indexes = self.action_space.search_point(proto_action, self.k_nearest_neighbors)
+        self.sample_count += 1
         actions = actions[0]
         self.data_fetch.set_ndn_action(actions[0].tolist())
         # make all the state-action pairs for the critic
