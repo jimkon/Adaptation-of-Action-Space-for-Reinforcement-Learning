@@ -20,6 +20,8 @@ class Node:
         self._branches = [None] * len(self.BRANCH_MATRIX)
         self._parent = parent
 
+        self.reset_value()
+
         self.__achieved_precision_limit = False
 
         if parent is not None:
@@ -58,21 +60,32 @@ class Node:
 
         return new_nodes
 
-    def search(self, point, increase=1):
+    def search(self, point, min_dist_till_now=1):
         if not self._covers_point(point):
             return None, 0
 
-        dist = np.linalg.norm(self._location - point)
-        self._value += dist
-        # self._value += increase
-        # if self.is_leaf() or np.array_equal(self.get_location(), point):
-        #     return self, dist
-        for branch in self.get_branches():
-            res, branch_dist = branch.search(point, increase)
-            if res is not None:
-                return res, min(dist, branch_dist)
+        dist_to_self = np.linalg.norm(self._location - point)
 
-        return self, dist
+        if min_dist_till_now > dist_to_self:
+            min_dist_till_now = dist_to_self
+
+        branches = self.get_branches()
+        for branch_i in range(len(branches)):
+            branch = branches[branch_i]
+            res, branch_dist = branch.search(point, min_dist_till_now)
+            if res is not None:
+                # print('dist to child', branch, '=', branch_dist)
+
+                if branch_dist > dist_to_self:
+                    self._value += dist_to_self
+                    return res, dist_to_self
+                else:
+                    self._value_without_branch[branch_i] += dist_to_self
+                    return res, branch_dist
+
+        # print(self, point, dist_to_self if min_dist_till_now == dist_to_self else 0)
+        self._value += dist_to_self if min_dist_till_now == dist_to_self else 0
+        return self, dist_to_self
 
     def delete(self):
         if self.is_root():
@@ -91,8 +104,11 @@ class Node:
     def get_value(self):
         return self._value
 
+    # def
+
     def reset_value(self):
         self._value = 0
+        self._value_without_branch = np.zeros(len(self.BRANCH_MATRIX))
 
     def get_level(self):
         return self._level
@@ -388,6 +404,7 @@ class Exploration_tree:
         # plt.figure()
         # print('nodes to plot:', len(nodes))
         plt.title('tree size={}'.format(len(nodes)))
+        plt.plot([0, 1], [0, 0], '|', linewidth=2)
         for node in nodes:
             parent, child = node.get_connection_with_parent()
             r = 0
@@ -478,8 +495,8 @@ class Exploration_tree:
 
 
 if __name__ == '__main__':
-    from bin_exp_test import test
-    test()
+    from bin_exp_test import test, test2
+    test2()
     # dims = 1
     # tree_size = 127
     # iterations = 100
