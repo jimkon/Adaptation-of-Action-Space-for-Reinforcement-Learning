@@ -24,6 +24,7 @@ def show(folder='saved/',
 
     print("Data file is loaded")
 
+    data_process.plot_sensitivity_efficiency()
     data_process.plot_rewards()
     data_process.plot_average_reward()
     data_process.plot_actions()

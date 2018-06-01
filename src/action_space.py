@@ -1,10 +1,14 @@
+#!/usr/bin/python3
 import numpy as np
 import itertools
 import pyflann
 
 import matplotlib.pyplot as plt
-from util.data_process import plot_3d_points
-import bin_exploration
+
+import sys
+sys.path.insert(0, '/home/jim/Desktop/dip/Adaptive-Discretization/src/')
+
+import ntree
 
 
 """
@@ -16,14 +20,14 @@ import bin_exploration
 
 class Space:
 
-    def __init__(self, low, high, points, init_ratio=.5):
+    def __init__(self, low, high, points):
         self._low = np.array(low)
         self._high = np.array(high)
         self._range = self._high - self._low
         self._dimensions = len(low)
 
-        self._action_space_module = bin_exploration.Exploration_tree(
-            self._dimensions, points, init_ratio=init_ratio, autoprune=True)
+        self._action_space_module = ntree.Tree(self._dimensions, points)
+        # self._action_space_module.plot(save=True)
 
         self.__space = self._action_space_module.get_points()
 
@@ -31,19 +35,23 @@ class Space:
         self.rebuild_flann()
 
     def update(self):
-        self._flann.delete_index()
+        changed = self._action_space_module.update()
 
-        self._action_space_module.prune()
+        if changed:
+            # self._action_space_module.plot(save=True)
+            self._flann.delete_index()
 
-        self.__space = self._action_space_module.get_points()
+            self.__space = self._action_space_module.get_points()
 
-        self.rebuild_flann()
+            self.rebuild_flann()
 
     def search_point(self, point, k):
         p_in = self._import_point(point)
 
-        self._action_space_module.expand_towards(p_in)
+        self._action_space_module.search_nearest_node(p_in)
 
+        if self.get_current_size() < k:
+            k = self.get_current_size()
         indexes, _ = self._flann.nn_index(p_in, k)
 
         knns = self.__space[indexes]
@@ -54,14 +62,20 @@ class Space:
 
         if k == 1:
             p_out = [p_out]
-        return np.array(p_out), indexes[0]
+
+        if len(indexes.shape) == 2:
+            index_out = indexes[0]
+        else:
+            index_out = indexes
+
+        return np.array(p_out), index_out
 
     def action_selected(self, actions_index):
         # action selected for actors action and got reward
         # self._action_space_module.expand_towards(self._import_point(actors_action))
-        node = self._action_space_module.get_node(actions_index)
-
-        # self._action_space_module.expand_towards(node.get_location())
+        # node = self._action_space_module.get_node(actions_index)
+        # self._action_space_module.search_nearest_node(node.get_location())
+        pass
 
     def rebuild_flann(self):
         self._index = self._flann.build_index(np.copy(self.__space), algorithm='kdtree')
@@ -76,10 +90,10 @@ class Space:
         return self.__space
 
     def get_current_size(self):
-        return self._action_space_module.get_size()
+        return self._action_space_module.get_current_size()
 
     def get_size(self):
-        return self._action_space_module.get_limit_size()
+        return self._action_space_module.get_size()
 
     def shape(self):
         return self.__space.shape

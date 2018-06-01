@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+from recreate_history import *
 
 from data import *
 import numpy as np
@@ -102,6 +103,7 @@ def plot_3d_points(points):
 class Data_handler:
 
     def __init__(self, filename):
+        self.filename = filename
         self.data = load(filename)
         self.episodes = self.data.data['simulation']['episodes']
 
@@ -109,12 +111,17 @@ class Data_handler:
         result = []
         for i in self.episodes:
             data = i[field]
-            if len(data) == 0:
+
+            if isinstance(data, list) and len(data) == 0:
                 continue
             if isinstance(data, list) and isinstance(data[0], list):
                 result.extend(data)
             else:
                 result.append(data)
+
+        # if len(np.array(result).shape) < 2:
+        #     print('ERROR getting episode data:', field)
+        #     exit()
         return result
 
     def get_full_episode_rewards(self):
@@ -124,11 +131,12 @@ class Data_handler:
             total_rewards.append(np.sum(episode_rewards))
         return total_rewards
 
-    def get_adaption_episode(self, reward_threshold=10, window=100):
+    def get_adaption_episode(self, reward_threshold=15, window=100):
         rewards = self.get_full_episode_rewards()
-        avg = np.array(apply_func_to_window(rewards, window, np.average))
+        window_size = int(len(rewards) * .05)
+        w_avg = np.array(apply_func_to_window(rewards, window_size, np.average))
 
-        adaption = np.where(avg > reward_threshold)
+        adaption = np.where(w_avg > reward_threshold)
         if len(adaption[0]) == 0:
             return 0
 
@@ -146,61 +154,11 @@ class Data_handler:
         sizes = self.get_episode_data("action_space_sizes")
         return np.average(sizes)
 
-    def create_action_history(self, action_space_check=False):
-        before = []
-        after = []
-
-        actions = self.data.data['agent']['max_actions']
-        init_actions = self.get_min_number_of_actions()
-        init_ratio = init_actions / actions
-        low = self.data.data['experiment']['actions_low']
-        high = self.data.data['experiment']['actions_high']
-
-        space = action_space.Space(low, high, actions, init_ratio)
-        tree = space._action_space_module
-
-        sizes = self.get_episode_data("action_space_sizes")
-
-        episode_number = 0
-        for episode in self.episodes:
-
-            before.append(space.get_space())
-            print(len(space.get_space()))
-
-            for search_point in episode['actors_actions']:
-                space.search_point(search_point, 1)
-            print('added points', len(episode['actors_actions']), episode['actors_actions'])
-
-            # tree.plot()
-
-            after.append(space.get_space())
-
-            size_before_prune = tree.get_size()
-            space.update()
-            print(len(space.get_space()))
-
-            size_after_prune = tree.get_size()
-            expected_sizes = sizes[episode_number]
-
-            print('Data_process: recreate_action_history: sizes do not match => episode',
-                  episode_number, end=', ')
-            print(size_before_prune, '==',
-                  expected_sizes[0], ' and ', size_after_prune, '==', expected_sizes[1])
-
-            if size_before_prune != expected_sizes[0] or size_after_prune != expected_sizes[1]:
-                # print('Data_process: recreate_action_history: sizes do not match => episode',
-                #       episode_number, end=', ')
-                # print(size_before_prune, '==',
-                #       expected_sizes[0], ' and ', size_after_prune, '==', expected_sizes[1])
-                #
-                # print('added points', len(episode['actors_actions']))
-                exit()
-                if action_space_check:
-                    return None, None
-
-            episode_number += 1
-
-        return before, after
+    def get_prune_episodes(self):
+        sizes = np.array(self.get_episode_data("action_space_sizes")).flatten()
+        size_1 = sizes[1:]
+        size_2 = sizes[:len(sizes) - 1]
+        return np.where(size_1 < size_2)[0] / 2 - 1
 
 
 # plots
@@ -274,14 +232,66 @@ class Data_handler:
         plt.grid(True)
         plt.show()
 
+    def plot_sensitivity_efficiency(self):
+        rewards = np.array(self.get_full_episode_rewards()) / 200
+
+        # rewards = []
+        # temp = np.array(self.get_episode_data('rewards')).flatten()
+        # for r in temp:
+        #     rewards.extend(r)
+        # rewards = np.array(rewards)
+
+        argsort = np.argsort(rewards)
+        rewards = rewards[argsort]
+
+        plt.subplot(211)
+
+        density = [[0, 0]]
+        for i in np.arange(0.1, 1, 0.1):
+            index = int(i * len(rewards))
+            plt.plot([0, 1], [rewards[index]] * 2, 'r', linewidth=0.5)
+            density.append([i, rewards[index]])
+        density.append([1, rewards[len(rewards) - 1]])
+
+        plt.plot(np.linspace(0, 1, len(rewards)), rewards, label='sorted')
+
+        # plt.plot(list(i[0] for i in density), list(i[1] for i in density), 'ro')
+        t_adaption = self.get_adaption_episode() / len(rewards)
+        plt.plot([t_adaption] * 2,
+                 [0, rewards[len(rewards) - 1]], '--', label='adaption at {}'.format(t_adaption))
+
+        avg = np.average(rewards)
+        plt.plot([0, 1], [avg] * 2, '--', label='average {}'.format(avg))
+
+        plt.xticks(list(i[0] for i in density))
+        plt.yticks(list(i[1] for i in density))
+        plt.ylabel("Reward")
+        plt.xlabel("Episodes")
+        plt.legend()
+        plt.grid(True)
+
+        plt.subplot(212)
+        rewards = []
+        temp = np.array(self.get_episode_data('rewards')).flatten()
+        for r in temp:
+            rewards.extend(r)
+        rewards = np.array(rewards)
+        plt.hist(rewards, label='hist')
+
+        avg = np.average(rewards)
+        plt.plot(avg, 0, 'o', label='average {}'.format(avg))
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
     def plot_actions(self):
         picked_actions = np.array(self.get_episode_data('actions'))
         actors_actions = np.array(self.get_episode_data('actors_actions'))
         ndn = np.array(self.get_episode_data('ndn_actions'))
 
         plt.plot(ndn, 'r1', label='Nearest discrete neighbor'.format())
-        plt.plot(actors_actions, 'g1', label='Actors actions'.format())
-        plt.plot(picked_actions, 'b1', label='Final actions'.format())
+        plt.plot(actors_actions, 'g2', label='Actors actions'.format())
+        plt.plot(picked_actions, 'b3', label='Final actions'.format())
 
         plt.ylabel("Action value")
         plt.xlabel("Episodes")
@@ -309,7 +319,7 @@ class Data_handler:
         plt.grid(True)
         plt.show()
 
-    def plot_action_distribution_over_time(self, number_of_batches=5, n_bins=30):
+    def plot_action_distribution_over_time(self, number_of_batches=4, n_bins=30):
         assert len(self.data.data['experiment']['actions_low']
                    ) == 1, 'This function works only for 1-dimensional action space'
         picked_actions = np.array(self.get_episode_data('actions'))
@@ -319,15 +329,15 @@ class Data_handler:
         res = []
         count = 0
         for batch in batches:
-            hist, bins = np.histogram(batch, bins=np.linspace(low, high, n_bins))
+            hist, bins = np.histogram(batch, bins=np.linspace(low, high, n_bins + 1))
             count += 1
-            plt.plot(bins[1:], hist, linewidth=1, label='t={}%'.format(
+            plt.plot(np.linspace(bins[0], bins[len(bins) - 1], n_bins), hist, linewidth=1, label='t={}%'.format(
                 100 * count / number_of_batches))
             # plt.hist(batch, bins=30, histtype='stepfilled', label=str(count))
 
-        plt.ylabel("logN")
+        plt.ylabel("N")
         plt.xlabel("Action space")
-        plt.yscale("log")
+        # plt.yscale("log")
         plt.legend()
         plt.grid(True)
         plt.show()
@@ -339,8 +349,9 @@ class Data_handler:
         error = np.sqrt(np.sum(np.square(ndn - actors_actions), axis=1))  # square error
         # plt.plot(error, label='error')
         print('Ploting actions might take a while: number of actions to plot {}:'.format(len(ndn)))
-        w_avg = apply_func_to_window(error, 1000, np.average)
-        plt.plot(w_avg, linewidth=1, label='w error')
+        w_avg = apply_func_to_window(error, int(self.get_average_action_space_size()), np.average)
+        plt.plot(w_avg, linewidth=1, label='running avg error(window {})'.format(
+            int(self.get_average_action_space_size())))
 
         avg_error = np.average(error)
         plt.plot([0, len(ndn)], [avg_error] * 2,
@@ -360,6 +371,12 @@ class Data_handler:
     def plot_discretization_error_distribution(self):
         ndn = np.array(self.get_episode_data('ndn_actions'))
         actors_actions = np.array(self.get_episode_data('actors_actions'))
+
+        inv_idexes = np.where(actors_actions > 3)[0]
+        np.put(actors_actions, inv_idexes, np.ones(len(inv_idexes)) * 3)
+
+        inv_idexes = np.where(actors_actions < -3)[0]
+        np.put(actors_actions, inv_idexes, np.ones(len(inv_idexes)) * -3)
 
         size = len(actors_actions)
 
@@ -389,9 +406,9 @@ class Data_handler:
         weighted_error = apply_func_to_window(weighted_error, int(size * 0.01), np.average)
         plt.plot(sorted_actions, weighted_error, linewidth=1, label='weighted error distr')
 
-        argmin = np.argmin(w_error)
-        plt.plot(sorted_actions[argmin], w_error[argmin],
-                 'bo', linewidth=1, label='min={}'.format(w_error[argmin]))
+        # argmin = np.argmin(w_error)
+        # plt.plot(sorted_actions[argmin], w_error[argmin],
+        #          'bo', linewidth=1, label='min={}'.format(w_error[argmin]))
 
         avg = np.average(error)
         plt.plot([sorted_actions[0], sorted_actions[size - 1]],
@@ -453,12 +470,59 @@ class Data_handler:
         plt.grid(True)
         plt.show()
 
+    def plot_action_space_timeline(self):
+        h = History(self.filename)
+        prune_episodes = h.data_p.get_prune_episodes()
+        print(prune_episodes)
+
+        all_actions = np.array(self.get_episode_data('actors_actions')).flatten()
+        prev_step_for_actions = 0
+        average_action_space = []
+        previous_action_space = None
+        for ep in prune_episodes:
+            actions = h.go_to_episode(ep)
+            h.end_episode()
+            h.print_step_info()
+
+            cur_action_space = h.current_action_space()
+
+            # average_action_space.extend(np.array(cur_action_space).flatten())
+            # plt.hist(average_action_space, bins=1000, histtype='step', label='average')
+
+            plt.hist(cur_action_space,
+                     bins=1000,
+                     linewidth=0.5,
+                     histtype='step',
+                     label='current space')
+
+            actions = []
+            for action in all_actions[prev_step_for_actions:h._current_total_steps - 1]:
+                actions.extend(h._action_space._import_point(action))
+            prev_step_for_actions = h._current_total_steps - 1
+            plt.hist(actions,
+                     bins=1000,
+                     histtype='step',
+                     label='actions')
+
+            if previous_action_space is not None:
+                plt.hist(previous_action_space,
+                         bins=1000,
+                         histtype='step',
+                         label='prev space')
+            previous_action_space = cur_action_space
+
+            plt.grid(True)
+            plt.legend()
+            plt.show()
+
 
 if __name__ == "__main__":
     # dh = Data_handler('data_10000_Wolp4_Inv127k12#0.json')
     # dh = Data_handler('data_10000_Wolp4_Inv1000k51#0.json.zip')
     # dh = Data_handler('data_10000_Wolp4_Inv255k25#0.json.zip')
-    dh = Data_handler('data_5000_Wolp4_Inv10000k1000#0.json.zip')
+    # dh = Data_handler('data_5000_Wolp4_Inv10000k1000#0.json.zip')
+    dh = Data_handler('data_2000_Wolp4_Inv511k51#0.json.zip')
+    # dh = Data_handler('data_100_Wolp4_Inv127k12#0.json.zip')
     print("loaded")
 
     # dh.plot_rewards()
@@ -468,7 +532,10 @@ if __name__ == "__main__":
     # dh.plot_action_distribution_over_time()
     # dh.plot_discretization_error()
     # dh.plot_actor_critic_error()
-    # dh.plot_discretization_error_distribution()
+    dh.plot_discretization_error_distribution()
+    # dh.plot_action_space_timeline()
+    # print(dh.get_prune_episodes())
 
-    b, a = dh.create_action_history()
-    print(len(b), len(a))
+    # dh.plot_action_space_size()
+    # b, a = dh.create_action_history()
+    # print(len(b), len(a))
