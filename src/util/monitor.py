@@ -48,6 +48,8 @@ class Monitor():
         self.reward_avg_ax = self.fig.add_subplot(4, 1, 4)
 
         # an = anim.FuncAnimation(self.fig, self.repaint, interval=10)
+        plt.style.use('bmh')
+        plt.tight_layout()
         plt.legend()
         plt.show()
 
@@ -64,7 +66,7 @@ class Monitor():
             self.state_ax.plot(x, y, label='{}'.format(j), linewidth=0.7)
 
         self.episodes = [ep for ep in self.episodes if ep >= self.t_offset]
-        self.state_ax.plot(self.episodes, np.zeros(len(self.episodes)), 'ro')
+        # self.state_ax.plot(self.episodes, np.zeros(len(self.episodes)), 'ro')
 
         self.state_ax.set_title('states')
         if self.state_size <= 4:
@@ -148,9 +150,10 @@ class Monitor():
 
 
 if __name__ == '__main__':
-    mon = Monitor(100, 2, 1)
-    mon.start()
+    states = 2
+    actions = 1
+    mon = Monitor(30, states, actions)
     while True:
-        mon.add_data([0.1, 5], [1], 2)
-        print('asdasd')
-        # mon.repaint()
+        mon.add_data(np.random.uniform(size=states),
+                     np.random.uniform(size=actions), np.random.uniform())
+        mon.repaint()

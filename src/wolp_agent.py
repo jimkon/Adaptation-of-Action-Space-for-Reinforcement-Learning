@@ -51,7 +51,7 @@ class WolpertingerAgent(agent.DDPGAgent):
                 print("Adapting action space")
                 self.action_space.update()
                 self.sample_count = 0
-                print('new action space:\n', self.action_space.get_space())
+                # print('new action space:\n', self.action_space.get_space())
 
             max_action_space_size = self.action_space.get_current_size()
             self.data_fetch.set_action_space_size(min_action_space_size, max_action_space_size)

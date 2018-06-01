@@ -9,6 +9,7 @@ from ddpg.agent import DDPGAgent
 import util.data
 from util.timer import Timer
 from monitor import *
+from ddpg.ou_noise import *
 
 
 def run(episodes=10000,
@@ -45,6 +46,8 @@ def run(episodes=10000,
 
     full_epoch_timer = Timer()
     reward_sum = 0
+
+    ou = OUNoise(1, mu=0, theta=0.5, sigma=.1)
 
     for ep in range(episodes):
 
@@ -89,7 +92,8 @@ def run(episodes=10000,
 
             # print(episode['obs'], episode['action'], episode['obs2'], episode['reward'])
             if done or (t == steps - 1):
-                monitor.end_of_episode()
+                if render:
+                    monitor.end_of_episode()
                 t += 1
                 reward_sum += total_reward
                 time_passed = timer.get_time()

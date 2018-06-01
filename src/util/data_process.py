@@ -131,11 +131,12 @@ class Data_handler:
             total_rewards.append(np.sum(episode_rewards))
         return total_rewards
 
-    def get_adaption_episode(self, reward_threshold=10, window=100):
+    def get_adaption_episode(self, reward_threshold=15, window=100):
         rewards = self.get_full_episode_rewards()
-        avg = np.array(apply_func_to_window(rewards, window, np.average))
+        window_size = int(len(rewards) * .05)
+        w_avg = np.array(apply_func_to_window(rewards, window_size, np.average))
 
-        adaption = np.where(avg > reward_threshold)
+        adaption = np.where(w_avg > reward_threshold)
         if len(adaption[0]) == 0:
             return 0
 
@@ -231,6 +232,58 @@ class Data_handler:
         plt.grid(True)
         plt.show()
 
+    def plot_sensitivity_efficiency(self):
+        rewards = np.array(self.get_full_episode_rewards()) / 200
+
+        # rewards = []
+        # temp = np.array(self.get_episode_data('rewards')).flatten()
+        # for r in temp:
+        #     rewards.extend(r)
+        # rewards = np.array(rewards)
+
+        argsort = np.argsort(rewards)
+        rewards = rewards[argsort]
+
+        plt.subplot(211)
+
+        density = [[0, 0]]
+        for i in np.arange(0.1, 1, 0.1):
+            index = int(i * len(rewards))
+            plt.plot([0, 1], [rewards[index]] * 2, 'r', linewidth=0.5)
+            density.append([i, rewards[index]])
+        density.append([1, rewards[len(rewards) - 1]])
+
+        plt.plot(np.linspace(0, 1, len(rewards)), rewards, label='sorted')
+
+        # plt.plot(list(i[0] for i in density), list(i[1] for i in density), 'ro')
+        t_adaption = self.get_adaption_episode() / len(rewards)
+        plt.plot([t_adaption] * 2,
+                 [0, rewards[len(rewards) - 1]], '--', label='adaption at {}'.format(t_adaption))
+
+        avg = np.average(rewards)
+        plt.plot([0, 1], [avg] * 2, '--', label='average {}'.format(avg))
+
+        plt.xticks(list(i[0] for i in density))
+        plt.yticks(list(i[1] for i in density))
+        plt.ylabel("Reward")
+        plt.xlabel("Episodes")
+        plt.legend()
+        plt.grid(True)
+
+        plt.subplot(212)
+        rewards = []
+        temp = np.array(self.get_episode_data('rewards')).flatten()
+        for r in temp:
+            rewards.extend(r)
+        rewards = np.array(rewards)
+        plt.hist(rewards, label='hist')
+
+        avg = np.average(rewards)
+        plt.plot(avg, 0, 'o', label='average {}'.format(avg))
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
     def plot_actions(self):
         picked_actions = np.array(self.get_episode_data('actions'))
         actors_actions = np.array(self.get_episode_data('actors_actions'))
@@ -266,7 +319,7 @@ class Data_handler:
         plt.grid(True)
         plt.show()
 
-    def plot_action_distribution_over_time(self, number_of_batches=5, n_bins=30):
+    def plot_action_distribution_over_time(self, number_of_batches=4, n_bins=30):
         assert len(self.data.data['experiment']['actions_low']
                    ) == 1, 'This function works only for 1-dimensional action space'
         picked_actions = np.array(self.get_episode_data('actions'))
@@ -282,9 +335,9 @@ class Data_handler:
                 100 * count / number_of_batches))
             # plt.hist(batch, bins=30, histtype='stepfilled', label=str(count))
 
-        plt.ylabel("logN")
+        plt.ylabel("N")
         plt.xlabel("Action space")
-        plt.yscale("log")
+        # plt.yscale("log")
         plt.legend()
         plt.grid(True)
         plt.show()
