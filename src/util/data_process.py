@@ -244,7 +244,7 @@ class Data_handler:
         argsort = np.argsort(rewards)
         rewards = rewards[argsort]
 
-        plt.subplot(211)
+        plt.subplot(311)
 
         density = [[0, 0]]
         for i in np.arange(0.1, 1, 0.1):
@@ -270,7 +270,7 @@ class Data_handler:
         plt.legend()
         plt.grid(True)
 
-        plt.subplot(212)
+        plt.subplot(312)
         rewards = []
         temp = np.array(self.get_episode_data('rewards')).flatten()
         for r in temp:
@@ -282,6 +282,22 @@ class Data_handler:
         plt.plot(avg, 0, 'o', label='average {}'.format(avg))
         plt.legend()
         plt.grid(True)
+        plt.ylabel("Steos")
+        plt.xlabel("Reward")
+
+        plt.subplot(313)
+        thetas = np.array(list(i[2] for i in np.array(self.get_episode_data('states'))))
+        thetas = np.abs(thetas * (360 / (2 * np.pi)))
+        plt.hist(thetas, label='deg histogram', bins=400)
+        avg_th = np.average(thetas)
+        plt.plot(avg_th, 0, 'o', label='avg={:.03f}'.format(avg_th))
+
+        plt.legend()
+        plt.grid(True)
+        # plt.xscale('log')
+        plt.ylabel("Steps")
+        plt.xlabel("Degrees")
+        plt.tight_layout()
         plt.show()
 
     def plot_actions(self):

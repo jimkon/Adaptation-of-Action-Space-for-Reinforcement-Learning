@@ -176,3 +176,11 @@ class DDPGAgent(Agent):
         # Update target Critic and actor network
         self.critic_net.update_target_critic()
         self.actor_net.update_target_actor()
+
+    def save_agent(self, path):
+        self.actor_net.save_model(path + '/actor.ckpt')
+        self.critic_net.save_model(path + '/critic.ckpt')
+
+    def load_agent(self, path):
+        self.actor_net.load_model(path + '/actor.ckpt')
+        self.critic_net.load_model(path + '/critic.ckpt')

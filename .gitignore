@@ -18,6 +18,7 @@ action_space_old.py
 la_actor_tester.py
 bin_exp_test.py
 
+/src/ddpg/CartPole-v0
 
 # .pyc files
 *.pyc

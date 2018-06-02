@@ -44,6 +44,7 @@ class CriticNet:
             # from simple actor net:
             self.check_fl = self.action_gradients
 
+            self.saver = tf.train.Saver()
             # initialize all tensor variable parameters:
             self.sess.run(tf.global_variables_initializer())
 
@@ -115,3 +116,10 @@ class CriticNet:
 
     def update_target_critic(self):
         self.sess.run(self.update_target_critic_op)
+
+    def save_model(self, path):
+        print('Critic variables saved into:', self.saver.save(self.sess, path))
+
+    def load_model(self, path):
+        self.saver.restore(self.sess, path)
+        print('Critic variables loaded')

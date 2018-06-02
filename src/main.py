@@ -17,7 +17,9 @@ def run(episodes=10000,
         experiment='InvertedPendulum-v1',
         max_actions=1000,
         adapted_action_space=True,
-        knn=0.1):
+        knn=0.1,
+        load_path=None,
+        save_path=None):
 
     env = gym.make(experiment)
 
@@ -29,6 +31,9 @@ def run(episodes=10000,
     # agent = DDPGAgent(env)
     agent = WolpertingerAgent(env, max_actions=max_actions, k_ratio=knn,
                               adapted_action_space=adapted_action_space)
+
+    if load_path is not None:
+        agent.load_agent(load_path)
 
     timer = Timer()
 
@@ -115,6 +120,9 @@ def run(episodes=10000,
         episodes, time / 1000, reward_sum / episodes))
 
     data.save()
+    if save_path is not None:
+        print('Saving agent\s vaiables')
+        agent.save_agent(save_path)
 
 
 def run_episode(render=False,

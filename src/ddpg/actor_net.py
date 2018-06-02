@@ -34,6 +34,8 @@ class ActorNet:
                 self.actor_model, self.actor_parameters, -self.q_gradient_input)  # /BATCH_SIZE)
             self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE).apply_gradients(
                 zip(self.parameters_gradients, self.actor_parameters))
+
+            self.saver = tf.train.Saver()
             # initialize all tensor variable parameters:
             self.sess.run(tf.global_variables_initializer())
 
@@ -60,15 +62,15 @@ class ActorNet:
         N_HIDDEN_2 = 300
         actor_state_in = tf.placeholder("float", [None, num_states])
         W1_a = tf.Variable(tf.random_uniform(
-            [num_states, N_HIDDEN_1], -1 / math.sqrt(num_states), 1 / math.sqrt(num_states)))
+            [num_states, N_HIDDEN_1], -1 / math.sqrt(num_states), 1 / math.sqrt(num_states)), name='W1_a')
         B1_a = tf.Variable(tf.random_uniform(
-            [N_HIDDEN_1], -1 / math.sqrt(num_states), 1 / math.sqrt(num_states)))
+            [N_HIDDEN_1], -1 / math.sqrt(num_states), 1 / math.sqrt(num_states)), name='B1_a')
         W2_a = tf.Variable(tf.random_uniform(
-            [N_HIDDEN_1, N_HIDDEN_2], -1 / math.sqrt(N_HIDDEN_1), 1 / math.sqrt(N_HIDDEN_1)))
+            [N_HIDDEN_1, N_HIDDEN_2], -1 / math.sqrt(N_HIDDEN_1), 1 / math.sqrt(N_HIDDEN_1)), name='W2_a')
         B2_a = tf.Variable(tf.random_uniform(
-            [N_HIDDEN_2], -1 / math.sqrt(N_HIDDEN_1), 1 / math.sqrt(N_HIDDEN_1)))
-        W3_a = tf.Variable(tf.random_uniform([N_HIDDEN_2, num_actions], -0.003, 0.003))
-        B3_a = tf.Variable(tf.random_uniform([num_actions], -0.003, 0.003))
+            [N_HIDDEN_2], -1 / math.sqrt(N_HIDDEN_1), 1 / math.sqrt(N_HIDDEN_1)), name='B2_a')
+        W3_a = tf.Variable(tf.random_uniform([N_HIDDEN_2, num_actions], -0.003, 0.003), name='W3_a')
+        B3_a = tf.Variable(tf.random_uniform([num_actions], -0.003, 0.003), name='B3_a')
 
         H1_a = tf.nn.softplus(tf.matmul(actor_state_in, W1_a) + B1_a)
         H2_a = tf.nn.tanh(tf.matmul(H1_a, W2_a) + B2_a)
@@ -87,3 +89,10 @@ class ActorNet:
 
     def update_target_actor(self):
         self.sess.run(self.update_target_actor_op)
+
+    def save_model(self, path):
+        print('Actor variables saved into:', self.saver.save(self.sess, path))
+
+    def load_model(self, path):
+        self.saver.restore(self.sess, path)
+        print('Actor variables loaded')
