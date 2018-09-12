@@ -14,13 +14,18 @@ from tensorflow_grad_inverter import grad_inverter
 
 from collections import deque
 
+import os
+
 
 """Some agent implementations including stevenpjg's DDPG agent"""
 
 
 class Agent:
 
-    def __init__(self, env):
+    def __init__(self, env, result_dir):
+
+        self.env = env
+        self.result_dir = result_dir
         # checking state space
         if isinstance(env.observation_space, Box):
             self.observation_space_size = env.observation_space.shape[0]
@@ -38,6 +43,11 @@ class Agent:
             self.continious_action_space = False
             self.low = np.array([0])
             self.high = np.array([env.action_space.n])
+
+        if result_dir:
+            directory = "{}/{}".format(result_dir, self.get_name())
+            if not os.path.exists(directory):
+                os.mkdir(directory)
 
     def act(self, state):
         pass
@@ -65,9 +75,9 @@ class DDPGAgent(Agent):
     BATCH_SIZE = 64
     GAMMA = 0.99
 
-    def __init__(self, env, is_batch_norm=False, is_grad_inverter=True,
+    def __init__(self, env, dir, is_batch_norm=False, is_grad_inverter=True,
                  training_flag=True):
-        super().__init__(env)
+        super().__init__(env, dir)
         assert isinstance(env.action_space, Box), "action space must be continuous"
 
         if is_batch_norm:
@@ -187,13 +197,29 @@ class DDPGAgent(Agent):
         self.critic_net.update_target_critic()
         self.actor_net.update_target_actor()
 
-    def save_agent(self, path):
-        self.actor_net.save_model(path + '/actor.ckpt')
-        self.critic_net.save_model(path + '/critic.ckpt')
+    def save_agent(self, force=False, comment="default"):
+        path = "{}/{}/{}/{}".format(self.result_dir, self.get_name(), self.env.spec.id, comment)
+        if not os.path.exists(path):
+            os.makedirs(path, exist_ok=True)
+            print("Saving agent in", path)
+            self.actor_net.save_model(path + '/actor.ckpt')
+            self.critic_net.save_model(path + '/critic.ckpt')
+        else:
+            if force:
+                print("Overwrite old agent in", path)
+                self.actor_net.save_model(path + '/actor.ckpt')
+                self.critic_net.save_model(path + '/critic.ckpt')
+            else:
+                print("Save aborted. An agent is already saved in ", path)
 
-    def load_agent(self, path):
-        self.actor_net.load_model(path + '/actor.ckpt')
-        self.critic_net.load_model(path + '/critic.ckpt')
+    def load_agent(self, comment="default"):
+        path = "{}/{}/{}/{}".format(self.result_dir, self.get_name(), self.env.spec.id, comment)
+        if os.path.exists(path):
+            print("Loading agent saved in", path)
+            self.actor_net.load_model(path + '/actor.ckpt')
+            self.critic_net.load_model(path + '/critic.ckpt')
+        else:
+            print("Agent not found in", path)
 
     def close_session(self):
         self.actor_net.close()

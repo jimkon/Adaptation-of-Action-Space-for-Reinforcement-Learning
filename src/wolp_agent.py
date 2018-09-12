@@ -9,17 +9,16 @@ class WolpertingerAgent(agent.DDPGAgent):
 
     ACTION_SPACE_SAMPLE_BUFFER_SIZE = 10000
 
-    def __init__(self, env, max_actions=1e5, k_ratio=0.1, adapted_action_space=True,
+    def __init__(self, env, result_dir, max_actions=1e5, k_ratio=0.1, adapted_action_space=True,
                  training_flag=True):
-        super().__init__(env, training_flag=training_flag)
+        super().__init__(env, result_dir, training_flag=training_flag)
         self.experiment = env.spec.id
-        if self.continious_action_space:
-            self.action_space = action_space.Space(
-                self.low, self.high, max_actions)
-            # max_actions = self.action_space.get_number_of_actions()
-        else:
-            print("this version doesn't work for discrete actions spaces")
-            exit()
+
+        assert self.continious_action_space, "this version doesn't work for discrete actions spaces"
+
+        self.action_space = action_space.Space(self.low, self.high, max_actions)
+
+        # max_actions = self.action_space.get_number_of_actions()
 
         self.k_nearest_neighbors = max(1, int(max_actions * k_ratio))
 
@@ -28,8 +27,9 @@ class WolpertingerAgent(agent.DDPGAgent):
         self.update_count = 0
 
     def get_name(self):
-        return 'Wolp5_{}k{}_{}'.format(self.action_space.get_size(),
-                                       self.k_nearest_neighbors, self.experiment)
+        # return 'Wolp5_{}k{}_{}'.format(self.action_space.get_size(),
+        #                                self.k_nearest_neighbors, self.experiment)
+        return "Wolp5"
 
     def get_action_space(self):
         return self.action_space
