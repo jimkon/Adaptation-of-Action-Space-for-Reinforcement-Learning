@@ -216,7 +216,7 @@ class Tree:
 
     def search_nearest_node(self, point, increase=True):
 
-        point = Tree.correct_point(point)
+        point = Tree.correct_point(point.flatten())
 
         node, dist = self._root.search(point, increase)
 

@@ -25,8 +25,8 @@ def load(file_name, abs_path=False):
 
 class Data:
 
-    PATH = 'D:/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/results/obj/'
-    AUTOSAVE_BATCH_SIZE = 1e5  # 1 mB
+    PATH = 'D:/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/results/'
+    AUTOSAVE_BATCH_SIZE = 1e5
 
     DATA_TEMPLATE = '''
     {
@@ -62,7 +62,12 @@ class Data:
     }
     '''
 
-    def __init__(self):
+    def __init__(self, path=None):
+        if path:
+            self.path = Data.PATH
+        else:
+            self.path = path
+
         self.data = json.loads(self.DATA_TEMPLATE)
         self.episode = json.loads(self.EPISODE_TEMPLATE)
         self.episode_id = 0
@@ -81,11 +86,19 @@ class Data:
         self.data['agent']['k'] = k
         self.data['agent']['version'] = version
 
+        self.path = "{}/{}/".format(self.path, name)
+        if not os.path.exists(self.path):
+            os.makedirs(self.path, exist_ok=True)
+
     def set_experiment(self, name, low, high, eps):
         self.data['experiment']['name'] = name
         self.data['experiment']['actions_low'] = low
         self.data['experiment']['actions_high'] = high
         self.data['experiment']['number_of_episodes'] = eps
+
+        self.path = "{}/{}/".format(self.path, name)
+        if not os.path.exists(self.path):
+            os.makedirs(self.path, exist_ok=True)
 
     def set_state(self, state):
         self.episode['states'].append(state)
@@ -169,7 +182,7 @@ class Data:
     def set_data(self, data):
         self.data = data
 
-    def save(self, path='', final_save=True):
+    def save(self, prefix='', final_save=True, comment=""):
         if final_save and self.temp_saves > 0:
             if self.data_added > 0:
                 # self.end_of_episode()
@@ -177,13 +190,18 @@ class Data:
             print('Data: Merging all temporary files')
             for i in range(self.temp_saves):
 
-                file_name = 'temp/{}{}.json'.format(i,
-                                                    self.get_file_name())
-                temp_data = load(file_name)
+                file_name = '{}temp/{}{}.json'.format(
+                    self.path,
+                    i,
+                    self.get_file_name())
+                temp_data = load(file_name, abs_path=True)
                 self.merge(temp_data)
-                os.remove(self.PATH + file_name)
+                os.remove(file_name)
 
-        final_file_name = self.PATH + path + self.get_file_name() + '.json'
+        directory = "{}/{}/".format(self.path, comment)
+        if not os.path.exists(directory):
+            os.makedirs(directory, exist_ok=True)
+        final_file_name = "{}/{}{}.json".format(directory, prefix, self.get_file_name())
         if final_save:
             print('Data: Ziping', final_file_name)
             with zipfile.ZipFile(final_file_name + '.zip', mode='w', compression=zipfile.ZIP_DEFLATED) as myzip:
@@ -197,7 +215,7 @@ class Data:
     def temp_save(self):
         if self.data_added == 0:
             return
-        self.save(path='temp/' + str(self.temp_saves), final_save=False)
+        self.save(prefix=str(self.temp_saves), comment='temp', final_save=False)
         self.temp_saves += 1
         self.data['simulation']['episodes'] = []  # reset
         self.data_added = 0

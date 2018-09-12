@@ -47,7 +47,7 @@ class Agent:
         if result_dir:
             directory = "{}/{}".format(result_dir, self.get_name())
             if not os.path.exists(directory):
-                os.mkdir(directory)
+                os.makedirs(directory, exist_ok=True)
 
     def act(self, state):
         pass
@@ -154,8 +154,6 @@ class DDPGAgent(Agent):
     def train(self):
         if not self.training_flag:
             return
-        print('training')
-        exit()
 
         # sample a random minibatch of N transitions from R
         state, action, reward, state_2, done = self.minibatches()
@@ -198,7 +196,8 @@ class DDPGAgent(Agent):
         self.actor_net.update_target_actor()
 
     def save_agent(self, force=False, comment="default"):
-        path = "{}/{}/{}/{}".format(self.result_dir, self.get_name(), self.env.spec.id, comment)
+        path = "{}/{}/{}/weights/{}".format(self.result_dir,
+                                            self.get_name(), self.env.spec.id, comment)
         if not os.path.exists(path):
             os.makedirs(path, exist_ok=True)
             print("Saving agent in", path)

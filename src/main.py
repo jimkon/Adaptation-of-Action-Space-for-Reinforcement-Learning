@@ -10,15 +10,17 @@ from monitor import *
 from ddpg.ou_noise import *
 
 
-def run(episodes=10,
+def run(result_dir="D:/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/results",
+        episodes=2,
         render=False,
+        # experiment='Ant-v2',
         experiment='InvertedPendulum-v2',
         max_actions=1000,
-        adapted_action_space=True,
         knn=0.1,
-        load_path=None,
-        save_path=None,
-        training_flag=False,
+        adapted_action_space=True,
+        load_agent=True,
+        save_agent=True,
+        training_flag=True,
         id=0):
 
     env = gym.make(experiment)
@@ -28,17 +30,16 @@ def run(episodes=10,
 
     steps = env.spec.timestep_limit
 
-    # agent = DDPGAgent(env)
-    agent = WolpertingerAgent(env, max_actions=max_actions, k_ratio=knn,
+    agent = WolpertingerAgent(env, result_dir, max_actions=max_actions, k_ratio=knn,
                               adapted_action_space=adapted_action_space,
                               training_flag=training_flag)
 
-    if load_path is not None:
-        agent.load_agent(load_path)
+    if load_agent:
+        agent.load_agent()
 
     timer = Timer()
 
-    data = util.data.Data()
+    data = util.data.Data(result_dir)
     data.set_agent(agent.get_name(), int(agent.action_space.get_size()),
                    agent.k_nearest_neighbors, 4 if not adapted_action_space else 5)
     data.set_experiment(experiment, agent.low.tolist(), agent.high.tolist(), episodes)
@@ -47,9 +48,9 @@ def run(episodes=10,
     agent.add_data_fetch(data)
     print(data.get_file_name())
 
-    if render:
-        monitor = Monitor(400, env.observation_space.shape[0], env.action_space.shape[0], 50,
-                          [agent.low.tolist()[0], agent.high.tolist()[0]])
+    # if render:
+    #     monitor = Monitor(400, env.observation_space.shape[0], env.action_space.shape[0], 50,
+    #                       [agent.low.tolist()[0], agent.high.tolist()[0]])
 
     full_epoch_timer = Timer()
     reward_sum = 0
@@ -79,11 +80,11 @@ def run(episodes=10,
             prev_observation = observation
             # some environments need the action as scalar valua, and other as array
             # for scalar: action[0] if len(action) == 1 else action
-            observation, reward, done, info = env.step(action if len(action) == 1 else action)
+            observation, reward, done, info = env.step(action.flatten())
 
-            if render:
-                monitor.add_data(observation, action, reward)
-                monitor.repaint()
+            # if render:
+            #     monitor.add_data(observation, action, reward)
+            #     monitor.repaint()
 
             data.set_reward(reward)
             # if render:
@@ -101,8 +102,8 @@ def run(episodes=10,
 
             # print(episode['obs'], episode['action'], episode['obs2'], episode['reward'])
             if done or (t == steps - 1):
-                if render:
-                    monitor.end_of_episode()
+                # if render:
+                #     monitor.end_of_episode()
 
                 t += 1
                 reward_sum += total_reward
@@ -131,11 +132,9 @@ def run(episodes=10,
     print('Run {} episode in {} seconds and got {} average reward'.format(
         episodes, time / 1000, reward_sum / episodes))
 
-    data.save()
-    if save_path is not None:
-        print('Saving agent\'s vaiables')
-        agent.save_agent(save_path)
-
+    data.save(comment="training")
+    if save_agent:
+        agent.save_agent(force=True)
     agent.close_session()
 
 

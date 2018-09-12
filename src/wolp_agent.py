@@ -12,7 +12,6 @@ class WolpertingerAgent(agent.DDPGAgent):
     def __init__(self, env, result_dir, max_actions=1e5, k_ratio=0.1, adapted_action_space=True,
                  training_flag=True):
         super().__init__(env, result_dir, training_flag=training_flag)
-        self.experiment = env.spec.id
 
         assert self.continious_action_space, "this version doesn't work for discrete actions spaces"
 
@@ -27,9 +26,10 @@ class WolpertingerAgent(agent.DDPGAgent):
         self.update_count = 0
 
     def get_name(self):
-        # return 'Wolp5_{}k{}_{}'.format(self.action_space.get_size(),
-        #                                self.k_nearest_neighbors, self.experiment)
         return "Wolp5"
+
+    def get_specs(self):
+        return '{}k{}'.format(self.action_space.get_size(), self.k_nearest_neighbors)
 
     def get_action_space(self):
         return self.action_space
