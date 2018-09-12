@@ -17,7 +17,7 @@ class ActorNet_bn:
         tf.reset_default_graph()
         self.g = tf.Graph()
         with self.g.as_default():
-            self.sess = tf.InteractiveSession()
+            self.sess = tf.Session()
 
             # actor network model parameters:
             self.actor_state_in = tf.placeholder("float", [None, num_states])

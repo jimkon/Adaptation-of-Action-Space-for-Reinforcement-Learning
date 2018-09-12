@@ -14,7 +14,6 @@ from tensorflow_grad_inverter import grad_inverter
 
 from collections import deque
 
-import tensorflow as tf
 
 """Some agent implementations including stevenpjg's DDPG agent"""
 
