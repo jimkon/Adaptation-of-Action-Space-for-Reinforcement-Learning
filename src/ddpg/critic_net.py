@@ -123,3 +123,6 @@ class CriticNet:
     def load_model(self, path):
         self.saver.restore(self.sess, path)
         print('Critic variables loaded')
+
+    def close(self):
+        self.sess.close()

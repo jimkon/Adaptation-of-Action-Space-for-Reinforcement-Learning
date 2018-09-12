@@ -112,3 +112,6 @@ class ActorNet_bn:
             self.t_H1_a_bn.updateTarget,
             self.t_H2_a_bn.updateTarget,
         ])
+
+    def close(self):
+        self.sess.close()

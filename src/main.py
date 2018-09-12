@@ -138,6 +138,8 @@ def run(episodes=10000,
         print('Saving agent\'s vaiables')
         agent.save_agent(save_path)
 
+    agent.close_session()
+
 
 # def run_episode(render=False,
 #                 experiment='InvertedPendulum-v1',

@@ -14,6 +14,8 @@ from tensorflow_grad_inverter import grad_inverter
 
 from collections import deque
 
+import tensorflow as tf
+
 """Some agent implementations including stevenpjg's DDPG agent"""
 
 
@@ -68,6 +70,7 @@ class DDPGAgent(Agent):
                  training_flag=True):
         super().__init__(env)
         assert isinstance(env.action_space, Box), "action space must be continuous"
+
         if is_batch_norm:
             self.critic_net = CriticNet_bn(self.observation_space_size,
                                            self.action_space_size)
@@ -192,3 +195,7 @@ class DDPGAgent(Agent):
     def load_agent(self, path):
         self.actor_net.load_model(path + '/actor.ckpt')
         self.critic_net.load_model(path + '/critic.ckpt')
+
+    def close_session(self):
+        self.actor_net.close()
+        self.critic_net.close()

@@ -96,3 +96,6 @@ class ActorNet:
     def load_model(self, path):
         self.saver.restore(self.sess, path)
         print('Actor variables loaded')
+
+    def close(self):
+        self.sess.close()

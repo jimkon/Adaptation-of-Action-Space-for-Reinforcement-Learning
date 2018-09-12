@@ -127,3 +127,6 @@ class CriticNet_bn:
             self.t_H1_c_bn.updateTarget,
             self.t_H2_c_bn.updateTarget
         ])
+
+    def close(self):
+        self.sess.close()
