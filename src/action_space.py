@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import sys
 sys.path.insert(0, '/home/jim/Desktop/dip/Adaptive-Discretization/src/')
 
-import ntree
+import bin_exploration
 
 
 """
@@ -30,7 +30,7 @@ class Space:
         self._range = self._high - self._low
         self._dimensions = len(low)
 
-        self._action_space_module = ntree.Tree(self._dimensions, points)
+        self._action_space_module = bin_exploration.Tree(self._dimensions, points)
         # self._action_space_module.plot(save=True)
         ################################################
         # pdf = np.array(list(gaussian(i, mu=0.5, sig=0.15) for i in np.linspace(0, 1, 10000)))

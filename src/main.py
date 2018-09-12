@@ -14,7 +14,7 @@ from ddpg.ou_noise import *
 
 def run(episodes=10000,
         render=False,
-        experiment='InvertedPendulum-v1',
+        experiment='InvertedPendulum-v2',
         max_actions=1000,
         adapted_action_space=True,
         knn=0.1,
@@ -239,5 +239,5 @@ def run(episodes=10000,
 #     data.save()
 #
 #
-# if __name__ == '__main__':
-#     run()
+if __name__ == '__main__':
+    run()
