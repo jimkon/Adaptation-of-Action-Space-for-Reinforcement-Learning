@@ -102,9 +102,9 @@ def plot_3d_points(points):
 
 class Data_handler:
 
-    def __init__(self, filename):
+    def __init__(self, filename, abs_path=False):
         self.filename = filename
-        self.data = load(filename)
+        self.data = load(filename, abs_path)
         self.episodes = self.data.data['simulation']['episodes']
 
     def get_episode_data(self, field):
@@ -273,8 +273,9 @@ class Data_handler:
         plt.subplot(312)
         rewards = []
         temp = np.array(self.get_episode_data('rewards')).flatten()
-        for r in temp:
-            rewards.extend(r)
+        # for r in temp:
+        #     rewards.extend(r)
+        rewards = temp
         rewards = np.array(rewards)
         plt.hist(rewards, label='hist')
 
@@ -532,14 +533,15 @@ class Data_handler:
             plt.show()
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
+
     # dh = Data_handler('data_10000_Wolp4_Inv127k12#0.json')
     # dh = Data_handler('data_10000_Wolp4_Inv1000k51#0.json.zip')
     # dh = Data_handler('data_10000_Wolp4_Inv255k25#0.json.zip')
-    # dh = Data_handler('data_5000_Wolp4_Inv10000k1000#0.json.zip')
-    dh = Data_handler('data_2000_Wolp4_Inv511k51#0.json.zip')
-    # dh = Data_handler('data_100_Wolp4_Inv127k12#0.json.zip')
-    print("loaded")
+    # # dh = Data_handler('data_5000_Wolp4_Inv10000k1000#0.json.zip')
+    # dh = Data_handler('data_2000_Wolp4_Inv511k51#0.json.zip')
+    # # dh = Data_handler('data_100_Wolp4_Inv127k12#0.json.zip')
+    # print("loaded")
 
     # dh.plot_rewards()
     # dh.plot_average_reward()
@@ -548,7 +550,7 @@ if __name__ == "__main__":
     # dh.plot_action_distribution_over_time()
     # dh.plot_discretization_error()
     # dh.plot_actor_critic_error()
-    dh.plot_discretization_error_distribution()
+    # dh.plot_discretization_error_distribution()
     # dh.plot_action_space_timeline()
     # print(dh.get_prune_episodes())
 

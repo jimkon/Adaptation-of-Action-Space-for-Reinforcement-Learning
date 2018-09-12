@@ -64,7 +64,8 @@ class DDPGAgent(Agent):
     BATCH_SIZE = 64
     GAMMA = 0.99
 
-    def __init__(self, env, is_batch_norm=False, is_grad_inverter=True):
+    def __init__(self, env, is_batch_norm=False, is_grad_inverter=True,
+                 training_flag=True):
         super().__init__(env)
         assert isinstance(env.action_space, Box), "action space must be continuous"
         if is_batch_norm:
@@ -80,6 +81,7 @@ class DDPGAgent(Agent):
                                       self.action_space_size)
 
         self.is_grad_inverter = is_grad_inverter
+        self.training_flag = training_flag
         self.replay_memory = deque()
 
         self.time_step = 0
@@ -106,6 +108,7 @@ class DDPGAgent(Agent):
         episode['obs'] = self._np_shaping(episode['obs'], True)
         episode['action'] = self._np_shaping(episode['action'], False)
         episode['obs2'] = self._np_shaping(episode['obs2'], True)
+
         self.add_experience(episode)
 
     def add_experience(self, episode):
@@ -137,6 +140,11 @@ class DDPGAgent(Agent):
         return state, action, reward, state_2, done
 
     def train(self):
+        if not self.training_flag:
+            return
+        print('training')
+        exit()
+
         # sample a random minibatch of N transitions from R
         state, action, reward, state_2, done = self.minibatches()
 

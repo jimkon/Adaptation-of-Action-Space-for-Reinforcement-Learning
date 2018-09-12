@@ -18,6 +18,10 @@ import ntree
 """
 
 
+def gaussian(x, mu, sig):
+    return np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))
+
+
 class Space:
 
     def __init__(self, low, high, points):
@@ -28,8 +32,25 @@ class Space:
 
         self._action_space_module = ntree.Tree(self._dimensions, points)
         # self._action_space_module.plot(save=True)
-
+        ################################################
+        # pdf = np.array(list(gaussian(i, mu=0.5, sig=0.15) for i in np.linspace(0, 1, 10000)))
+        # pdf = pdf / np.sum(pdf)
+        #
+        # samples = np.random.choice(np.linspace(0, 1, 10000),
+        #                            10000,
+        #                            p=pdf)
+        # samples = np.reshape(samples, (len(samples), 1))
+        #
+        # for i in range(10):
+        #     self._action_space_module.feed(samples)
+        #     if not self._action_space_module.update():
+        #         break
+        # self._action_space_module.plot()
+        # ################################################
         self.__space = self._action_space_module.get_points()
+        # plt.hist(self.__space)
+        # plt.show()
+        # exit()
 
         self._flann = pyflann.FLANN()
         self.rebuild_flann()
@@ -101,8 +122,8 @@ class Space:
     def get_number_of_actions(self):
         return self.shape()[0]
 
-    def plot_space(self, id, additional_points=None):
-        self._action_space_module.plot(id)
+    def plot_space(self, filename=''):
+        self._action_space_module.plot(save=True, filename=filename)
         return
         dims = self._dimensions
 

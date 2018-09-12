@@ -9,8 +9,9 @@ class WolpertingerAgent(agent.DDPGAgent):
 
     ACTION_SPACE_SAMPLE_BUFFER_SIZE = 10000
 
-    def __init__(self, env, max_actions=1e5, k_ratio=0.1, adapted_action_space=True):
-        super().__init__(env)
+    def __init__(self, env, max_actions=1e5, k_ratio=0.1, adapted_action_space=True,
+                 training_flag=True):
+        super().__init__(env, training_flag=training_flag)
         self.experiment = env.spec.id
         if self.continious_action_space:
             self.action_space = action_space.Space(
@@ -24,6 +25,7 @@ class WolpertingerAgent(agent.DDPGAgent):
 
         self.adapted_action_space = adapted_action_space
         self.sample_count = 0
+        self.update_count = 0
 
     def get_name(self):
         return 'Wolp5_{}k{}_{}'.format(self.action_space.get_size(),
@@ -50,6 +52,9 @@ class WolpertingerAgent(agent.DDPGAgent):
             if self.adapted_action_space and self.sample_count > self.ACTION_SPACE_SAMPLE_BUFFER_SIZE:
                 print("Adapting action space")
                 self.action_space.update()
+                self.update_count += 1
+                self.action_space.plot_space(
+                    filename="/home/jim/Desktop/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/results/pics/a{}.png".format(self.update_count))
                 self.sample_count = 0
                 # print('new action space:\n', self.action_space.get_space())
 

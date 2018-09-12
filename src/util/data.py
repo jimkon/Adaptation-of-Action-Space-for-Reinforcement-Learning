@@ -5,9 +5,12 @@ from os.path import splitext, basename
 import zipfile
 
 
-def load(file_name):
+def load(file_name, abs_path=False):
     data = Data()
-    file_name = Data.PATH + file_name
+    if abs_path:
+        file_name = file_name
+    else:
+        file_name = Data.PATH + file_name
 
     if zipfile.is_zipfile(file_name):
         print('Data: Unziping ', file_name, '...')

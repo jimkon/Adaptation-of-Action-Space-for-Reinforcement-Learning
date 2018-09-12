@@ -20,6 +20,9 @@ def show(folder='saved/',
                                                          id
                                                          )
 
+    # template = '/home/jim/Desktop/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/results/obj/saved/data_2000_Wolp{}_Car{}k{}#{}.json.zip'
+    #
+    # data_process = Data_handler(template.format(4, 2047, 204, 1), abs_path=True)
     data_process = Data_handler(name)
 
     print("Data file is loaded")
@@ -32,3 +35,7 @@ def show(folder='saved/',
     data_process.plot_action_distribution_over_time()
     data_process.plot_discretization_error()
     data_process.plot_action_space_size()
+
+
+if __name__ == '__main__':
+    show()

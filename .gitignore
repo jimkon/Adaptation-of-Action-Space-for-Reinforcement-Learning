@@ -26,14 +26,14 @@ bin_exp_test.py
 
 # results
 results/*
-!results/obj/
-results/obj/*
-!results/obj/saved/
-results/obj/saved/*
-!results/obj/saved/data_2500_Wolp4_Inv7k1#0.json.zip
+# !results/obj/
+# results/obj/*
+# !results/obj/saved/
+# results/obj/saved/*
+# !results/obj/saved/data_2500_Wolp4_Inv7k1#0.json.zip
 
-!results/obj/temp/
-results/obj/temp/*
-!results/obj/temp/README.md
+# !results/obj/temp/
+# results/obj/temp/*
+# !results/obj/temp/README.md
 
 data
