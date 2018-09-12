@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 import json
 import os
 from os.path import splitext, basename
@@ -26,7 +25,7 @@ def load(file_name, abs_path=False):
 
 class Data:
 
-    PATH = '/home/jim/Desktop/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/results/obj/'
+    PATH = 'D:/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/results/obj/'
     AUTOSAVE_BATCH_SIZE = 1e5  # 1 mB
 
     DATA_TEMPLATE = '''
@@ -187,7 +186,7 @@ class Data:
         final_file_name = self.PATH + path + self.get_file_name() + '.json'
         if final_save:
             print('Data: Ziping', final_file_name)
-            with zipfile.ZipFile(final_file_name + '.zip', 'w', zipfile.ZIP_DEFLATED) as myzip:
+            with zipfile.ZipFile(final_file_name + '.zip', mode='w', compression=zipfile.ZIP_DEFLATED) as myzip:
                 myzip.writestr(basename(final_file_name), json.dumps(
                     self.data, indent=2, sort_keys=True))
         else:

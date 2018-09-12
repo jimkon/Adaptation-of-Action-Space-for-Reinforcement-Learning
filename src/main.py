@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 import gym
 
 import numpy as np
@@ -12,7 +10,7 @@ from monitor import *
 from ddpg.ou_noise import *
 
 
-def run(episodes=10000,
+def run(episodes=10,
         render=False,
         experiment='InvertedPendulum-v2',
         max_actions=1000,
@@ -20,7 +18,7 @@ def run(episodes=10000,
         knn=0.1,
         load_path=None,
         save_path=None,
-        training_flag=True,
+        training_flag=False,
         id=0):
 
     env = gym.make(experiment)

@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 from recreate_history import *
 
 from data import *

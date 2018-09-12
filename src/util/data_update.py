@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 import data
 import numpy as np
 import sys
