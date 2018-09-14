@@ -4,10 +4,8 @@ import pyflann
 
 import matplotlib.pyplot as plt
 
-import sys
-sys.path.insert(0, '/home/jim/Desktop/dip/Adaptive-Discretization/src/')
 
-import bin_exploration
+import adiscr
 
 
 """
@@ -23,13 +21,63 @@ def gaussian(x, mu, sig):
 
 class Space:
 
-    def __init__(self, low, high, points):
+    def __init__(self, low, high, points, adaptation="auto", arg1="direct", arg2=100000, arg3=10):
+        """
+        low, high: arrays that define the lowest and highest edge of a n-dimension box, low[i]<high[i] for each i<=n
+        points: the number of points inside this box
+        adaptation: can be either 'auto', 'custom' or 'off'
+            'auto': if 'auto', search points are stored into a buffer with size arg2 (default=100000)
+                    and when the buffer is full, action space makes an adaptation update. arg1 (default='direct')
+                    specifies the error_function of the adaptive tree. arg3 is ingored.
+            'custom': if 'custom', arg1 (default='direct') specifies the error_function of the adaptive tree, arg2 specifies an array
+                    made by drawn samples of a custom Probability Density Function (PDF) on which action space adapts fully on initialization.
+                    arg3 specifies the maximum number of iterations (default=10) of the adaptation process. Each iteration might take a while
+                    depending on the resolution of the PDF.
+            'off': if 'off', action space is initialized to a uniform PDF and stays the stays as it is. arg1,
+                    arg2 and arg3 are ignored.
+        """
         self._low = np.array(low)
         self._high = np.array(high)
         self._range = self._high - self._low
         self._dimensions = len(low)
 
-        self._action_space_module = bin_exploration.Tree(self._dimensions, points)
+        self._adaptation_flag = False
+
+        assert adaptation in ['auto', 'custom',
+                              'off'], "adaptation parameter can be either 'auto', 'custom' or 'off'"
+
+        if adaptation is 'auto':
+            try:
+                self._action_space_module = adiscr.Tree(
+                    self._dimensions, points, error_function=arg1)
+            except AssertionError as e:
+                raise Exception(
+                    "When adaptation='auto' or 'custom', arg1 has to specify an error_function for the adiscr.Tree")
+
+            assert arg2 > 0, "When adaptation='custom', arg2 has to specify a buffer size"
+            self._adaptation_flag = True
+            self._sample_buffer = []
+            self._max_buffer_size = int(arg2)
+        elif adaptation is 'custom':
+            try:
+                self._action_space_module = adiscr.Tree(
+                    self._dimensions, points, error_function=arg1)
+            except AssertionError as e:
+                raise Exception(
+                    "When adaptation='auto' or 'custom', arg1 has to specify an error_function for the adiscr.Tree")
+
+            assert type(
+                arg2) is list, "When adaptation='custom', arg2 has to specify an array of samples drawn by a custom PDF"
+            assert arg3 > 0, "When adaptation='custom', arg3 has to specify the maximum number of iterations of the adaptation process"
+
+            self._action_space_module.adapt_to_samples(arg2, max_iterations=int(arg3))
+        else:
+            self._action_space_module = adiscr.Tree(self._dimensions, points)
+
+        self.__space = self._action_space_module.get_points()
+        self._flann = pyflann.FLANN()
+        self.rebuild_flann()
+
         # self._action_space_module.plot(save=True)
         ################################################
         # pdf = np.array(list(gaussian(i, mu=0.5, sig=0.15) for i in np.linspace(0, 1, 10000)))
@@ -46,32 +94,37 @@ class Space:
         #         break
         # self._action_space_module.plot()
         # ################################################
-        self.__space = self._action_space_module.get_points()
         # plt.hist(self.__space)
         # plt.show()
         # exit()
 
-        self._flann = pyflann.FLANN()
-        self.rebuild_flann()
-
     def update(self):
-        changed = self._action_space_module.update()
+        if not self._adaptation_flag:
+            return
 
-        if changed:
-            # self._action_space_module.plot(save=True)
-            self._flann.delete_index()
+        if len(self._sample_buffer) > self._max_buffer_size:
+            changed = self._action_space_module.feed_and_update(self._sample_buffer)
+            self._sample_buffer = []
+            if changed:
+                # self._action_space_module.plot(save=True)
+                self._flann.delete_index()
 
-            self.__space = self._action_space_module.get_points()
+                self.__space = self._action_space_module.get_points()
 
-            self.rebuild_flann()
+                self.rebuild_flann()
 
     def search_point(self, point, k):
+
+        k = min(self.get_current_size(), k)
+        # if self.get_current_size() < k:
+        #     k = self.get_current_size()
+
         p_in = self._import_point(point)
 
-        self._action_space_module.search_nearest_node(p_in)
+        if self._adaptation_flag:
+            self._sample_buffer.append(p_in)
+            # self._action_space_module.search_nearest_node(p_in)
 
-        if self.get_current_size() < k:
-            k = self.get_current_size()
         indexes, _ = self._flann.nn_index(p_in, k)
 
         knns = self.__space[indexes]
