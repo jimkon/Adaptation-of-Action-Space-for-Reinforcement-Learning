@@ -9,13 +9,17 @@ class WolpertingerAgent(agent.DDPGAgent):
 
     ACTION_SPACE_SAMPLE_BUFFER_SIZE = 10000
 
-    def __init__(self, env, result_dir, max_actions=1e5, k_ratio=0.1, adapted_action_space=True,
-                 training_flag=True):
+    def __init__(self, env, result_dir, max_actions=1e5, k_ratio=0.1, action_space_config=None):
         super().__init__(env, result_dir, training_flag=training_flag)
 
         assert self.continious_action_space, "this version doesn't work for discrete actions spaces"
 
-        self.action_space = action_space.Space(self.low, self.high, max_actions)
+        if action_space_config:
+            self.action_space = action_space.Space(self.low, self.high, max_actions,
+                                                   adaptation=action_space_config[0], arg1=action_space_config[1],
+                                                   arg2=action_space_config[2], arg3=action_space_config[3])
+        else:
+            self.action_space = action_space.Space(self.low, self.high, max_actions)
 
         # max_actions = self.action_space.get_number_of_actions()
 

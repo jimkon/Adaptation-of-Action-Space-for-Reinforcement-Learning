@@ -10,13 +10,12 @@ import adiscr
 
 """
     This class represents a n-dimensional cube with a specific number of points embeded.
-    Points are distributed uniformly in the initialization. A search can be made using the
-    search_point function that returns the k (given) nearest neighbors of the input point.
+    Points are distributed uniformly in the initialization.
 """
 
 
-def gaussian(x, mu, sig):
-    return np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))
+# def gaussian(x, mu, sig):
+#     return np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))
 
 
 class Space:
@@ -67,7 +66,7 @@ class Space:
                     "When adaptation='auto' or 'custom', arg1 has to specify an error_function for the adiscr.Tree")
 
             assert type(
-                arg2) is list, "When adaptation='custom', arg2 has to specify an array of samples drawn by a custom PDF"
+                arg2) is np.ndarray, "When adaptation='custom', arg2 has to specify an array of samples drawn by a custom PDF"
             assert arg3 > 0, "When adaptation='custom', arg3 has to specify the maximum number of iterations of the adaptation process"
 
             self._action_space_module.adapt_to_samples(arg2, max_iterations=int(arg3))
@@ -76,31 +75,11 @@ class Space:
 
         self.__space = self._action_space_module.get_points()
         self._flann = pyflann.FLANN()
-        self.rebuild_flann()
-
-        # self._action_space_module.plot(save=True)
-        ################################################
-        # pdf = np.array(list(gaussian(i, mu=0.5, sig=0.15) for i in np.linspace(0, 1, 10000)))
-        # pdf = pdf / np.sum(pdf)
-        #
-        # samples = np.random.choice(np.linspace(0, 1, 10000),
-        #                            10000,
-        #                            p=pdf)
-        # samples = np.reshape(samples, (len(samples), 1))
-        #
-        # for i in range(10):
-        #     self._action_space_module.feed(samples)
-        #     if not self._action_space_module.update():
-        #         break
-        # self._action_space_module.plot()
-        # ################################################
-        # plt.hist(self.__space)
-        # plt.show()
-        # exit()
+        self._rebuild_flann()
 
     def update(self):
         if not self._adaptation_flag:
-            return
+            return False
 
         if len(self._sample_buffer) > self._max_buffer_size:
             changed = self._action_space_module.feed_and_update(self._sample_buffer)
@@ -111,7 +90,9 @@ class Space:
 
                 self.__space = self._action_space_module.get_points()
 
-                self.rebuild_flann()
+                self._rebuild_flann()
+            return changed
+        return False
 
     def search_point(self, point, k):
 
@@ -150,7 +131,7 @@ class Space:
         # self._action_space_module.search_nearest_node(node.get_location())
         pass
 
-    def rebuild_flann(self):
+    def _rebuild_flann(self):
         self._index = self._flann.build_index(np.copy(self.__space), algorithm='kdtree')
 
     def _import_point(self, point):
