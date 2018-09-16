@@ -14,7 +14,7 @@ class CriticNet:
 
         self.g = tf.Graph()
         with self.g.as_default():
-            self.sess = tf.InteractiveSession()
+            self.sess = tf.Session()
 
             # critic_q_model parameters:
             self.W1_c, self.B1_c, self.W2_c, self.W2_action_c, self.B2_c, self.W3_c, self.B3_c,\
@@ -123,3 +123,6 @@ class CriticNet:
     def load_model(self, path):
         self.saver.restore(self.sess, path)
         print('Critic variables loaded')
+
+    def close(self):
+        self.sess.close()

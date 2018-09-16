@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 import numpy as np
 import math
 import action_space as space
@@ -190,7 +189,7 @@ class Node:
 """
 
 
-class Exploration_tree:
+class Tree:
 
     EXPANSION_VALUE_THRESHOLD = 1
 
@@ -208,7 +207,7 @@ class Exploration_tree:
 
         self._min_level = 0
 
-        init_level = Exploration_tree.compute_level(avg_nodes, self._branch_factor)
+        init_level = Tree.compute_level(avg_nodes, self._branch_factor)
         for i in range(init_level):
             self.expand_nodes(0)
 
@@ -217,7 +216,7 @@ class Exploration_tree:
 
     def search_nearest_node(self, point, increase=True):
 
-        point = self.correct_point(point)
+        point = Tree.correct_point(point.flatten())
 
         node, dist = self._root.search(point, increase)
 
@@ -466,7 +465,6 @@ class Exploration_tree:
             plt.show()
         plt.gcf().clear()
 
-    @staticmethod
     def compute_level(n, branches_of_each_node):
         total = 0
         power = -1
@@ -480,7 +478,6 @@ class Exploration_tree:
             return max(power - 1, 0)
         return max(power, 0)
 
-    @staticmethod
     def correct_point(point):
         new_point = []
         for c in point:
