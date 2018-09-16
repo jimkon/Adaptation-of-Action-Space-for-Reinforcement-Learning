@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-from recreate_history import *
+# from recreate_history import *
 
 from data import *
 import numpy as np
@@ -8,7 +8,8 @@ import math
 
 import sys
 sys.path.insert(0, '../')
-import action_space
+# print(sys.path)
+# import action_space
 
 
 """
