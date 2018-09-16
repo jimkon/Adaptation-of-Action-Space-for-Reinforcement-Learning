@@ -11,6 +11,8 @@ class WolpertingerAgent(agent.DDPGAgent):
 
     def __init__(self, env, result_dir, max_actions=1e5, k_ratio=0.1,
                  action_space_config=['auto', 'square', 10000, 10]):
+        self.action_space_config = action_space_config
+
         super().__init__(env, result_dir, training_flag=(action_space_config is not None
                                                          and action_space_config[0] is not 'off'))
 
@@ -27,7 +29,16 @@ class WolpertingerAgent(agent.DDPGAgent):
         self.update_count = 0
 
     def get_name(self):
-        return "Wolp5"
+        return "Wolp"+str(self.get_version())
+
+    def get_version(self):
+        adaptation = self.action_space_config[0]
+        if adaptation is 'auto':
+            return 6
+        elif adaptation is 'custom':
+            return 5
+        else:
+            return 4
 
     def get_specs(self):
         return '{}k{}'.format(self.action_space.get_size(), self.k_nearest_neighbors)

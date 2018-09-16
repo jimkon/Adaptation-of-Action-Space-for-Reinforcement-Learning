@@ -100,9 +100,9 @@ def plot_3d_points(points):
 
 class Data_handler:
 
-    def __init__(self, filename, abs_path=False):
+    def __init__(self, filename):
         self.filename = filename
-        self.data = load(filename, abs_path)
+        self.data = load(filename)
         self.episodes = self.data.data['simulation']['episodes']
 
     def get_episode_data(self, field):
@@ -160,6 +160,7 @@ class Data_handler:
 
 
 # plots
+
 
     def plot_rewards(self):
 
@@ -531,9 +532,10 @@ class Data_handler:
             plt.show()
 
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
 
-    # dh = Data_handler('data_10000_Wolp4_Inv127k12#0.json')
+    dh = Data_handler(
+        "D:\dip\Adaptation-of-Action-Space-for-Reinforcement-Learning\\results\Wolp5\InvertedPendulum-v2\data\def\data_1000_Wolp4_Inv1000k100#0.json.zip")
     # dh = Data_handler('data_10000_Wolp4_Inv1000k51#0.json.zip')
     # dh = Data_handler('data_10000_Wolp4_Inv255k25#0.json.zip')
     # # dh = Data_handler('data_5000_Wolp4_Inv10000k1000#0.json.zip')
@@ -541,7 +543,7 @@ class Data_handler:
     # # dh = Data_handler('data_100_Wolp4_Inv127k12#0.json.zip')
     # print("loaded")
 
-    # dh.plot_rewards()
+    dh.plot_rewards()
     # dh.plot_average_reward()
     # dh.plot_actions()
     # dh.plot_action_distribution()

@@ -12,13 +12,13 @@ from ddpg.ou_noise import *
 PROJECT_DIR = "D:/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/results/"
 
 
-def run(episodes=1000,
+def run(episodes=100,
         experiment='InvertedPendulum-v2',
         result_dir=PROJECT_DIR,
         render=False,
         max_actions=1000,
         knn=0.1,
-        adapted_action_space=False,
+        action_space_config=['auto', 'square', 1000, 10],
         load_agent=True,
         save_agent=True,
         training_flag=True,
@@ -33,7 +33,7 @@ def run(episodes=1000,
     steps = env.spec.timestep_limit
 
     agent = WolpertingerAgent(env, result_dir, max_actions=max_actions, k_ratio=knn,
-                              action_space_config=['auto', 'square', 1000, 10])
+                              action_space_config=action_space_config)
 
     if load_agent:
         agent.load_agent(comment=comment)
@@ -42,7 +42,7 @@ def run(episodes=1000,
 
     data = util.data.Data(agent.result_dir)
     data.set_agent(agent.get_name(), int(agent.action_space.get_size()),
-                   agent.k_nearest_neighbors, 4 if not adapted_action_space else 5)
+                   agent.k_nearest_neighbors, agent.get_version())
     data.set_experiment(experiment, agent.low.tolist(), agent.high.tolist(), episodes)
     data.set_id(id)
 

@@ -5,7 +5,7 @@ import zipfile
 
 
 def load(file_name):
-    data = Data(file_name)
+    data = Data(None)
 
     if zipfile.is_zipfile(file_name):
         print('Data: Unziping ', file_name, '...')
@@ -61,9 +61,10 @@ class Data:
 
         self.path = path
 
-        self.path = "{}/data/".format(self.path)
-        if not os.path.exists(self.path):
-            os.makedirs(self.path, exist_ok=True)
+        if path:
+            self.path = "{}/data/".format(self.path)
+            if not os.path.exists(self.path):
+                os.makedirs(self.path, exist_ok=True)
 
         self.data = json.loads(self.DATA_TEMPLATE)
         self.episode = json.loads(self.EPISODE_TEMPLATE)
@@ -198,7 +199,7 @@ class Data:
                 myzip.writestr(basename(final_file_name), json.dumps(
                     self.data, indent=2, sort_keys=True))
         else:
-            with open(final_file_name, 'w') as f:
+            with open(final_file_name, 'w', encoding="UTF-8") as f:
                 print('Data: Saving', final_file_name)
                 json.dump(self.data, f)
 
