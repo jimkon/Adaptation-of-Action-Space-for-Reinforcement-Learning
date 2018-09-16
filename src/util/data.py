@@ -26,7 +26,9 @@ def load(file_name, abs_path=False):
 class Data:
 
     PATH = 'D:/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/results/'
+
     AUTOSAVE_BATCH_SIZE = 1e5
+
 
     DATA_TEMPLATE = '''
     {
