@@ -54,7 +54,13 @@ class Agent:
         pass
 
     def get_name(self):
+        return self.get_short_name()+str(self.get_version())
+
+    def get_short_name(self):
         return 'Agent'
+
+    def get_version(self):
+        return 0
 
     def _np_shaping(self, array, is_state):
 
@@ -104,8 +110,8 @@ class DDPGAgent(Agent):
     def add_data_fetch(self, df):
         self.data_fetch = df
 
-    def get_name(self):
-        return 'DDPG' + super().get_name()
+    def get_short_name(self):
+        return 'DDPG'
 
     def act(self, state):
         state = self._np_shaping(state, True)
