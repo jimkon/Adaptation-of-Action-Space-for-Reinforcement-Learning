@@ -184,7 +184,7 @@ class Data:
                     self.path,
                     i,
                     self.get_file_name())
-                temp_data = load(file_name, abs_path=True)
+                temp_data = load(file_name)
                 self.merge(temp_data)
                 os.remove(file_name)
 
