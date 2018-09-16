@@ -10,7 +10,7 @@ from monitor import *
 from ddpg.ou_noise import *
 
 
-def run(episodes=4000,
+def run(episodes=1000,
         experiment='InvertedPendulum-v2',
         result_dir="D:/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/results",
         render=False,
@@ -20,7 +20,8 @@ def run(episodes=4000,
         load_agent=True,
         save_agent=True,
         training_flag=True,
-        id=0):
+        id=0,
+        comment="com"):
 
     env = gym.make(experiment)
 
@@ -30,8 +31,7 @@ def run(episodes=4000,
     steps = env.spec.timestep_limit
 
     agent = WolpertingerAgent(env, result_dir, max_actions=max_actions, k_ratio=knn,
-                              adapted_action_space=adapted_action_space,
-                              training_flag=training_flag)
+                              action_space_config=['off', 'square', 10000, 10])
 
     if load_agent:
         agent.load_agent()
@@ -131,9 +131,9 @@ def run(episodes=4000,
     print('Run {} episodes in {} seconds and got {} average reward'.format(
         episodes, time / 1000, reward_sum / episodes))
 
-    data.save(comment="training")
+    data.save(comment=comment)
     if save_agent:
-        agent.save_agent(force=True)
+        agent.save_agent(force=True, comment=comment)
     agent.close_session()
 
 

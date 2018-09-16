@@ -29,7 +29,6 @@ class Data:
 
     AUTOSAVE_BATCH_SIZE = 1e5
 
-
     DATA_TEMPLATE = '''
     {
         "id":0,
@@ -200,7 +199,7 @@ class Data:
                 self.merge(temp_data)
                 os.remove(file_name)
 
-        directory = "{}/{}/".format(self.path, comment)
+        directory = "{}/data/{}/".format(self.path, comment)
         if not os.path.exists(directory):
             os.makedirs(directory, exist_ok=True)
         final_file_name = "{}/{}{}.json".format(directory, prefix, self.get_file_name())

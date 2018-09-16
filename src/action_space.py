@@ -20,12 +20,12 @@ import adiscr
 
 class Space:
 
-    def __init__(self, low, high, points, adaptation="auto", arg1="direct", arg2=100000, arg3=10):
+    def __init__(self, low, high, points, adaptation="auto", arg1="direct", arg2=10000, arg3=10):
         """
         low, high: arrays that define the lowest and highest edge of a n-dimension box, low[i]<high[i] for each i<=n
         points: the number of points inside this box
         adaptation: can be either 'auto', 'custom' or 'off'
-            'auto': if 'auto', search points are stored into a buffer with size arg2 (default=100000)
+            'auto': if 'auto', search points are stored into a buffer with size arg2 (default=10000)
                     and when the buffer is full, action space makes an adaptation update. arg1 (default='direct')
                     specifies the error_function of the adaptive tree. arg3 is ingored.
             'custom': if 'custom', arg1 (default='direct') specifies the error_function of the adaptive tree, arg2 specifies an array
