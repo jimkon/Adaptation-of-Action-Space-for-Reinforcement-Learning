@@ -4,6 +4,8 @@ from gym.spaces import Box
 from ddpg import agent
 import action_space
 
+import os
+
 
 class WolpertingerAgent(agent.DDPGAgent):
 
@@ -50,9 +52,12 @@ class WolpertingerAgent(agent.DDPGAgent):
 
             if self.action_space.update():
                 print("Adapting action space")
-                # self.update_count += 1
-                # self.action_space.plot_space(
-                #     filename="D:/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/results/pics/a{}.png".format(self.update_count))
+                self.update_count += 1
+                pics_dir = "{}/pics/".format(self.result_dir)
+                if not os.path.exists(pics_dir):
+                    os.makedirs(pics_dir, exist_ok=True)
+                self.action_space.plot_space(
+                    filename="{}/a{}.png".format(pics_dir, self.update_count))
                 # print('new action space:\n', self.action_space.get_space())
 
             max_action_space_size = self.action_space.get_current_size()

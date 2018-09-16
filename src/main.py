@@ -9,10 +9,12 @@ from util.timer import Timer
 from monitor import *
 from ddpg.ou_noise import *
 
+PROJECT_DIR = "D:/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/results/"
+
 
 def run(episodes=1000,
         experiment='InvertedPendulum-v2',
-        result_dir="D:/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/results",
+        result_dir=PROJECT_DIR,
         render=False,
         max_actions=1000,
         knn=0.1,
@@ -21,7 +23,7 @@ def run(episodes=1000,
         save_agent=True,
         training_flag=True,
         id=0,
-        comment="com"):
+        comment="def"):
 
     env = gym.make(experiment)
 
@@ -31,14 +33,14 @@ def run(episodes=1000,
     steps = env.spec.timestep_limit
 
     agent = WolpertingerAgent(env, result_dir, max_actions=max_actions, k_ratio=knn,
-                              action_space_config=['off', 'square', 10000, 10])
+                              action_space_config=['auto', 'square', 1000, 10])
 
     if load_agent:
-        agent.load_agent()
+        agent.load_agent(comment=comment)
 
     timer = Timer()
 
-    data = util.data.Data(result_dir)
+    data = util.data.Data(agent.result_dir)
     data.set_agent(agent.get_name(), int(agent.action_space.get_size()),
                    agent.k_nearest_neighbors, 4 if not adapted_action_space else 5)
     data.set_experiment(experiment, agent.low.tolist(), agent.high.tolist(), episodes)

@@ -25,7 +25,7 @@ class Agent:
     def __init__(self, env, result_dir):
 
         self.env = env
-        self.result_dir = result_dir
+        self.result_dir = "{}/{}/{}".format(result_dir, self.get_name(), self.env.spec.id)
         # checking state space
         if isinstance(env.observation_space, Box):
             self.observation_space_size = env.observation_space.shape[0]
@@ -44,10 +44,8 @@ class Agent:
             self.low = np.array([0])
             self.high = np.array([env.action_space.n])
 
-        if result_dir:
-            directory = "{}/{}".format(result_dir, self.get_name())
-            if not os.path.exists(directory):
-                os.makedirs(directory, exist_ok=True)
+        if not os.path.exists(self.result_dir):
+            os.makedirs(self.result_dir, exist_ok=True)
 
     def act(self, state):
         pass
@@ -196,8 +194,7 @@ class DDPGAgent(Agent):
         self.actor_net.update_target_actor()
 
     def save_agent(self, force=False, comment="default"):
-        path = "{}/{}/{}/weights/{}".format(self.result_dir,
-                                            self.get_name(), self.env.spec.id, comment)
+        path = "{}/weights/{}".format(self.result_dir, comment)
         if not os.path.exists(path):
             os.makedirs(path, exist_ok=True)
             print("Saving agent in", path)
@@ -212,7 +209,7 @@ class DDPGAgent(Agent):
                 print("Save aborted. An agent is already saved in ", path)
 
     def load_agent(self, comment="default"):
-        path = "{}/{}/{}/{}".format(self.result_dir, self.get_name(), self.env.spec.id, comment)
+        path = "{}/weights/{}".format(self.result_dir, comment)
         if os.path.exists(path):
             print("Loading agent saved in", path)
             self.actor_net.load_model(path + '/actor.ckpt')

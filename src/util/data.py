@@ -4,12 +4,8 @@ from os.path import splitext, basename
 import zipfile
 
 
-def load(file_name, abs_path=False):
-    data = Data()
-    if abs_path:
-        file_name = file_name
-    else:
-        file_name = Data.PATH + file_name
+def load(file_name):
+    data = Data(file_name)
 
     if zipfile.is_zipfile(file_name):
         print('Data: Unziping ', file_name, '...')
@@ -24,8 +20,6 @@ def load(file_name, abs_path=False):
 
 
 class Data:
-
-    PATH = 'D:/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/results/'
 
     AUTOSAVE_BATCH_SIZE = 1e5
 
@@ -63,11 +57,13 @@ class Data:
     }
     '''
 
-    def __init__(self, path=None):
-        if path:
-            self.path = Data.PATH
-        else:
-            self.path = path
+    def __init__(self, path):
+
+        self.path = path
+
+        self.path = "{}/data/".format(self.path)
+        if not os.path.exists(self.path):
+            os.makedirs(self.path, exist_ok=True)
 
         self.data = json.loads(self.DATA_TEMPLATE)
         self.episode = json.loads(self.EPISODE_TEMPLATE)
@@ -87,19 +83,11 @@ class Data:
         self.data['agent']['k'] = k
         self.data['agent']['version'] = version
 
-        self.path = "{}/{}/".format(self.path, name)
-        if not os.path.exists(self.path):
-            os.makedirs(self.path, exist_ok=True)
-
     def set_experiment(self, name, low, high, eps):
         self.data['experiment']['name'] = name
         self.data['experiment']['actions_low'] = low
         self.data['experiment']['actions_high'] = high
         self.data['experiment']['number_of_episodes'] = eps
-
-        self.path = "{}/{}/".format(self.path, name)
-        if not os.path.exists(self.path):
-            os.makedirs(self.path, exist_ok=True)
 
     def set_state(self, state):
         self.episode['states'].append(state)
@@ -191,7 +179,7 @@ class Data:
             print('Data: Merging all temporary files')
             for i in range(self.temp_saves):
 
-                file_name = '{}temp/{}{}.json'.format(
+                file_name = '{}/temp/{}{}.json'.format(
                     self.path,
                     i,
                     self.get_file_name())
@@ -199,9 +187,10 @@ class Data:
                 self.merge(temp_data)
                 os.remove(file_name)
 
-        directory = "{}/data/{}/".format(self.path, comment)
+        directory = "{}/{}/".format(self.path, comment)
         if not os.path.exists(directory):
             os.makedirs(directory, exist_ok=True)
+
         final_file_name = "{}/{}{}.json".format(directory, prefix, self.get_file_name())
         if final_save:
             print('Data: Ziping', final_file_name)
@@ -220,45 +209,3 @@ class Data:
         self.temp_saves += 1
         self.data['simulation']['episodes'] = []  # reset
         self.data_added = 0
-
-
-if __name__ == '__main__':
-
-    import numpy as np
-    import random
-
-    # d = load('results/obj/saved/data_10001_Wolp3_InvertedPendulum-v1#0.json.zip')
-    # # d = load('results/obj/saved/data_10000_agent_name4_exp_name#0.json.zip')
-    # print(d.get_file_name())
-    # d = load('results/obj/data_10000_agent_name4_exp_name#0.json.zip')
-    d = Data()
-    d.set_agent('agent_name', 100000, 10, 4)
-    d.set_experiment('exp_name', [-2, -3], [3, 2], 10000)
-
-    # d.print_data()
-    #
-    for i in range(10):
-        d.set_state([i, i, i, i])
-        d.set_action([i, i])
-        d.set_actors_action([i, i])
-        d.set_ndn_action([i, i])
-        d.set_reward(i)
-        if i % 3 == 0:
-            d.finish_and_store_episode()
-            d.temp_save()
-            # exit()
-
-    # for i in range(30, 400):
-    #     d.set_state([i, i, i, i])
-    #     d.set_action([i, i])
-    #     d.set_actors_action([i, i])
-    #     d.set_ndn_action([i, i])
-    #     d.set_reward(random.randint(0, 10))
-    #     if i % 2 == 0:
-    #         d.finish_and_store_episode()
-    #         d.temp_save()
-    # #
-    d.temp_save()
-    d.temp_save()
-    d.save()
-    d.print_data()
