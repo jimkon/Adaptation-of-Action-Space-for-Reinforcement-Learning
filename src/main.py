@@ -12,18 +12,18 @@ from ddpg.ou_noise import *
 PROJECT_DIR = "D:/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/results/"
 
 
-def run(episodes=100,
-        experiment='InvertedPendulum-v2',
+def run(experiment,
+        episodes,
+        max_actions,
+        knn,
+        action_space_config=['off', 'square', 1000, 10],
         result_dir=PROJECT_DIR,
         render=False,
-        max_actions=1000,
-        knn=0.1,
-        action_space_config=['off', 'square', 1000, 10],
         load_agent=True,
         save_agent=True,
         training_flag=True,
         id=0,
-        comment="def"):
+        comment="default"):
 
     env = gym.make(experiment)
 
@@ -33,6 +33,7 @@ def run(episodes=100,
     steps = env.spec.timestep_limit
 
     agent = WolpertingerAgent(env, result_dir, max_actions=max_actions, k_ratio=knn,
+                              training_flag=training_flag,
                               action_space_config=action_space_config)
 
     if load_agent:
@@ -139,5 +140,21 @@ def run(episodes=100,
     agent.close_session()
 
 
+def training(experiment, reset_after_episodes, max_batches, max_actions, knn=0.1, comment="training", finalize=True):
+
+    # start training batches
+    for i in range(max_batches):
+        run(experiment=experiment,
+            episodes=reset_after_episodes,
+            max_actions=max_actions,
+            knn=knn,
+            id=i,
+            comment=comment)
+
+    if finalize:
+        path_to_dir = PROJECT_DIR+"/Wolp4/"+experiment+"/data/"+comment+"/"
+        util.data.merge(path_to_dir)
+
+
 if __name__ == '__main__':
-    run()
+    training("InvertedPendulum-v2", 10, 20, 1023, comment="test")
