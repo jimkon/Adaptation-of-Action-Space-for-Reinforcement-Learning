@@ -19,6 +19,95 @@ def load(file_name):
     return data
 
 
+def merge(path_to_dir, zipfiles=True, delete_merged=True):
+
+    print("Merging files in ", path_to_dir)
+
+    import re
+    import numpy as np
+
+    assert os.path.exists(path_to_dir), "Path does not exist"
+
+    all_paths = os.listdir(path_to_dir)
+
+    file_indexes = np.where(list(os.path.isfile(path_to_dir+"/"+file) for file in all_paths))[0]
+
+    file_names = list(all_paths[index] for index in file_indexes)
+
+    file_pattern = None
+    if not zipfiles:
+        m = re.search("data_.*", file_names[0])
+        if m is not None:
+            file_pattern = "(\d)*"+m.group(0)
+            file_template = "{}"+m.group(0)
+        else:
+            return None
+
+    else:
+        m = re.search("data_.*\.json.zip", file_names[0])
+        if m is not None:
+            m = re.search("data_.*#", file_names[0])
+            file_pattern = m.group(0)+"(\d)+.json.zip"
+            file_template = m.group(0)+"{}"+".json.zip"
+        else:
+            return None
+
+    print("Pattern found:", file_pattern, "\nSearching files...")
+
+    filtered_filenames = []
+    for file in file_names:
+        m = re.search(file_pattern, file)
+        if m is not None:
+            filtered_filenames.append(file)
+
+    for f in filtered_filenames:
+        print("Found:", f)
+
+    print("Sorting files...")
+    if not zipfiles:
+        key = "(\d)*"
+    else:
+        key = "#(\d)*"
+
+    nums = []
+    for file in filtered_filenames:
+        m = re.search(key, file)
+        if m is not None:
+            matched = m.group(0)
+            # print("for", file, "key is", m.group(0))
+            nums.append(int(matched) if not zipfiles else int(matched[1:]))
+        else:
+            print("Failed on sorting, return None")
+            return None
+
+    nums = sorted(nums)
+
+    # print("final names")
+    print("Merging...")
+    prev_i = nums[0]
+    result_data = load(path_to_dir+"/"+file_template.format(prev_i))
+
+    for i in nums[1:]:
+        file_name = path_to_dir+"/"+file_template.format(i)
+        temp_data = load(file_name)
+        result_data.merge(temp_data)
+        if delete_merged:
+            os.remove(file_name)
+
+        if i-prev_i > 1:
+            print("Warning: Not consecutive files: [",
+                  file_template.format(prev_i), ",", file_template.format(i),
+                  "]. Possible missing file", file_template.format(prev_i+1))
+
+        prev_i = i
+
+    result_data.path = path_to_dir
+    result_data.data['experiment']['number_of_episodes'] *= len(nums)
+    result_data.save()
+
+    os.remove(path_to_dir+"/"+file_template.format(nums[0]))
+
+
 class Data:
 
     AUTOSAVE_BATCH_SIZE = 1e5
