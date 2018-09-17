@@ -17,7 +17,9 @@ class ActorNet_bn:
         tf.reset_default_graph()
         self.g = tf.Graph()
         with self.g.as_default():
-            self.sess = tf.Session()
+            config = tf.ConfigProto()
+            config.gpu_options.allow_growth = True
+            self.sess = tf.Session(config=config)
 
             # actor network model parameters:
             self.actor_state_in = tf.placeholder("float", [None, num_states])

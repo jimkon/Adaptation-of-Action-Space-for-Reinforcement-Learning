@@ -14,7 +14,9 @@ class CriticNet:
 
         self.g = tf.Graph()
         with self.g.as_default():
-            self.sess = tf.Session()
+            config = tf.ConfigProto()
+            config.gpu_options.allow_growth = True
+            self.sess = tf.Session(config=config)
 
             # critic_q_model parameters:
             self.W1_c, self.B1_c, self.W2_c, self.W2_action_c, self.B2_c, self.W3_c, self.B3_c,\

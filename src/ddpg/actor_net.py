@@ -13,7 +13,9 @@ class ActorNet:
     def __init__(self, num_states, num_actions):
         self.g = tf.Graph()
         with self.g.as_default():
-            self.sess = tf.Session()
+            config = tf.ConfigProto()
+            config.gpu_options.allow_growth = True
+            self.sess = tf.Session(config=config)
 
             # actor network model parameters:
             self.W1_a, self.B1_a, self.W2_a, self.B2_a, self.W3_a, self.B3_a,\
