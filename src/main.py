@@ -152,9 +152,16 @@ def training(experiment, reset_after_episodes, max_batches, max_actions, knn=0.1
             comment=comment)
 
     if finalize:
-        path_to_dir = PROJECT_DIR+"/Wolp4/"+experiment+"/data/"+comment+"/"
+        path_to_dir = "{}/Wolp4/{}/data/{}/".format(PROJECT_DIR, experiment, comment)
         util.data.merge(path_to_dir)
+
+        import os
+        import shutil
+
+        jup_template = "{}/jupyter_templates/training.ipynb".format(PROJECT_DIR)
+        if os.path.exists(jup_template):
+            shutil.copyfile(jup_template, path_to_dir+'/training.ipynb')
 
 
 if __name__ == '__main__':
-    training("InvertedPendulum-v2", 10, 20, 1023, comment="test")
+    training("InvertedPendulum-v2", 10, 5, 1023, comment="test")
