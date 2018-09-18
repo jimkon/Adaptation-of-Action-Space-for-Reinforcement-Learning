@@ -20,10 +20,12 @@ def run(experiment,
         result_dir=PROJECT_DIR,
         render=False,
         load_agent=True,
+        agent_to_load=None,
         save_agent=True,
         training_flag=True,
         id=0,
-        comment="default"):
+        comment="default",
+        close_session=True):
 
     env = gym.make(experiment)
 
@@ -37,11 +39,14 @@ def run(experiment,
                               action_space_config=action_space_config)
 
     if load_agent:
-        agent.load_agent(comment=comment)
+        if agent_to_load is not None:
+            agent.load_agent(agent_name=agent_to_load[0], comment=agent_to_load[1])
+        else:
+            agent.load_agent(comment=comment)
 
     timer = Timer()
 
-    data = util.data.Data(agent.result_dir)
+    data = util.data.Data(agent.get_dir(), comment=comment)
     data.set_agent(agent.get_name(), int(agent.action_space.get_size()),
                    agent.k_nearest_neighbors, agent.get_version())
     data.set_experiment(experiment, agent.low.tolist(), agent.high.tolist(), episodes)
@@ -134,25 +139,44 @@ def run(experiment,
     print('Run {} episodes in {} seconds and got {} average reward'.format(
         episodes, time / 1000, reward_sum / episodes))
 
-    data.save(comment=comment)
+    data.save()
     if save_agent:
         agent.save_agent(force=True, comment=comment)
-    agent.close_session()
+
+    if close_session:
+        agent.close_session()
+
+    return agent
 
 
-def training(experiment, reset_after_episodes, max_batches, max_actions, knn=0.1, comment="training", finalize=True):
+def training(experiment, reset_after_episodes, max_batches, max_actions, knn=0.1, comment="training", agent_to_load=None, finalize=True):
 
     # start training batches
     for i in range(max_batches):
-        run(experiment=experiment,
-            episodes=reset_after_episodes,
-            max_actions=max_actions,
-            knn=knn,
-            id=i,
-            comment=comment)
+        # if i == 0:
+        #     arg_agent_to_load = agent_to_load
+        # else:
+        #     arg_agent_to_load = ['Wolp4', "{}/{}{}".format(comment, 'prev/t', i-1)]
+
+        # if i < max_batches-1:
+        #     arg_comment = "{}/{}{}".format(comment, 'prev/t', i)
+        # else:
+        #     arg_comment = comment
+
+        agent = run(experiment=experiment,
+                    episodes=reset_after_episodes,
+                    max_actions=max_actions,
+                    knn=knn,
+                    id=i,
+                    comment=comment,
+                    agent_to_load=agent_to_load,
+                    close_session=False)
+
+        agent.save_agent(comment="{}/{}{}".format(comment, 'prev/t', i))
+        agent.close_session()
 
     if finalize:
-        path_to_dir = "{}/Wolp4/{}/data/{}/".format(PROJECT_DIR, experiment, comment)
+        path_to_dir = "{}/data/{}/".format(agent.get_dir(), comment)
         util.data.merge(path_to_dir)
 
         import os
@@ -164,4 +188,4 @@ def training(experiment, reset_after_episodes, max_batches, max_actions, knn=0.1
 
 
 if __name__ == '__main__':
-    training("InvertedPendulum-v2", 10, 5, 1023, comment="test")
+    training("InvertedPendulum-v2", 1000, 1, 1023, comment="test")

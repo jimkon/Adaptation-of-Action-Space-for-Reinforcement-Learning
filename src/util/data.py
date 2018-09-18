@@ -86,6 +86,7 @@ def merge(path_to_dir, zipfiles=True, delete_merged=True):
     print("Merging...")
     prev_i = nums[0]
     result_data = load(path_to_dir+"/"+file_template.format(prev_i))
+    os.remove(path_to_dir+"/"+file_template.format(nums[0]))
 
     for i in nums[1:]:
         file_name = path_to_dir+"/"+file_template.format(i)
@@ -104,8 +105,6 @@ def merge(path_to_dir, zipfiles=True, delete_merged=True):
     result_data.path = path_to_dir
     result_data.data['experiment']['number_of_episodes'] *= len(nums)
     result_data.save()
-
-    os.remove(path_to_dir+"/"+file_template.format(nums[0]))
 
 
 class Data:
@@ -146,12 +145,13 @@ class Data:
     }
     '''
 
-    def __init__(self, path):
+    def __init__(self, path, comment=""):
 
         self.path = path
+        self.comment = comment
 
         if path:
-            self.path = "{}/data/".format(self.path)
+            self.path = "{}/data/{}/".format(self.path, comment)
             if not os.path.exists(self.path):
                 os.makedirs(self.path, exist_ok=True)
 
@@ -262,6 +262,7 @@ class Data:
         self.data = data
 
     def save(self, prefix='', final_save=True, comment=""):
+
         if final_save and self.temp_saves > 0:
             if self.data_added > 0:
                 # self.end_of_episode()

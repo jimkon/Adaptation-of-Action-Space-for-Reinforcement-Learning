@@ -25,7 +25,7 @@ class Agent:
     def __init__(self, env, result_dir):
 
         self.env = env
-        self.result_dir = "{}/{}/{}".format(result_dir, self.get_name(), self.env.spec.id)
+        self.result_dir = result_dir
         # checking state space
         if isinstance(env.observation_space, Box):
             self.observation_space_size = env.observation_space.shape[0]
@@ -44,8 +44,8 @@ class Agent:
             self.low = np.array([0])
             self.high = np.array([env.action_space.n])
 
-        if not os.path.exists(self.result_dir):
-            os.makedirs(self.result_dir, exist_ok=True)
+        if not os.path.exists(self.get_dir()):
+            os.makedirs(self.get_dir(), exist_ok=True)
 
     def act(self, state):
         pass
@@ -70,6 +70,9 @@ class Agent:
         res = np.array(array)
         res.shape = (number_of_elements, size_of_element)
         return res
+
+    def get_dir(self):
+        return "{}/{}/{}".format(self.result_dir, self.get_name(), self.env.spec.id)
 
 
 class DDPGAgent(Agent):
@@ -200,7 +203,7 @@ class DDPGAgent(Agent):
         self.actor_net.update_target_actor()
 
     def save_agent(self, force=False, comment="default"):
-        path = "{}/weights/{}".format(self.result_dir, comment)
+        path = "{}/weights/{}".format(self.get_dir(), comment)
         if not os.path.exists(path):
             os.makedirs(path, exist_ok=True)
             print("Saving agent in", path)
@@ -214,8 +217,12 @@ class DDPGAgent(Agent):
             else:
                 print("Save aborted. An agent is already saved in ", path)
 
-    def load_agent(self, comment="default"):
-        path = "{}/weights/{}".format(self.result_dir, comment)
+    def load_agent(self, agent_name=None, comment="default"):
+        if agent_name is None:
+            path = "{}/weights/{}".format(self.get_dir(), comment)
+        else:
+            path = "{}/{}/{}/weights/{}".format(self.result_dir,
+                                                agent_name, self.env.spec.id, comment)
         if os.path.exists(path):
             print("Loading agent saved in", path)
             self.actor_net.load_model(path + '/actor.ckpt')
