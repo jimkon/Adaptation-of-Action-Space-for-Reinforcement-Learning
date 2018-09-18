@@ -110,6 +110,8 @@ class DDPGAgent(Agent):
         action_bounds = [action_max, action_min]
         self.grad_inv = grad_inverter(action_bounds)
 
+        self.data_fetch = None
+
     def add_data_fetch(self, df):
         self.data_fetch = df
 
@@ -119,7 +121,9 @@ class DDPGAgent(Agent):
     def act(self, state):
         state = self._np_shaping(state, True)
         result = self.actor_net.evaluate_actor(state).astype(float)
-        self.data_fetch.set_actors_action(result[0].tolist())
+
+        if self.data_fetch:
+            self.data_fetch.set_actors_action(result[0].tolist())
 
         return result
 

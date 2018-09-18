@@ -72,13 +72,15 @@ class WolpertingerAgent(agent.DDPGAgent):
                 # print('new action space:\n', self.action_space.get_space())
 
             max_action_space_size = self.action_space.get_current_size()
-            self.data_fetch.set_action_space_size(min_action_space_size, max_action_space_size)
+            if self.data_fetch:
+                self.data_fetch.set_action_space_size(min_action_space_size, max_action_space_size)
 
     def wolp_action(self, state, proto_action):
         # get the proto_action's k nearest neighbors
         actions, indexes = self.action_space.search_point(proto_action, self.k_nearest_neighbors)
         actions = actions[0]
-        self.data_fetch.set_ndn_action(actions[0].tolist())
+        if self.data_fetch:
+            self.data_fetch.set_ndn_action(actions[0].tolist())
         # make all the state-action pairs for the critic
         states = np.tile(state, [len(actions), 1])
         # evaluate each pair through the critic

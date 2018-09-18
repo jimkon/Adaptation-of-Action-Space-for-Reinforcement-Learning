@@ -22,6 +22,7 @@ def run(experiment,
         load_agent=True,
         agent_to_load=None,
         save_agent=True,
+        save_data=True,
         training_flag=True,
         id=0,
         comment="default",
@@ -46,14 +47,15 @@ def run(experiment,
 
     timer = Timer()
 
-    data = util.data.Data(agent.get_dir(), comment=comment)
-    data.set_agent(agent.get_name(), int(agent.action_space.get_size()),
-                   agent.k_nearest_neighbors, agent.get_version())
-    data.set_experiment(experiment, agent.low.tolist(), agent.high.tolist(), episodes)
-    data.set_id(id)
+    if save_data:
+        data = util.data.Data(agent.get_dir(), comment=comment)
+        data.set_agent(agent.get_name(), int(agent.action_space.get_size()),
+                       agent.k_nearest_neighbors, agent.get_version())
+        data.set_experiment(experiment, agent.low.tolist(), agent.high.tolist(), episodes)
+        data.set_id(id)
 
-    agent.add_data_fetch(data)
-    print(data.get_file_name())
+        agent.add_data_fetch(data)
+        print(data.get_file_name())
 
     # if render:
     #     monitor = Monitor(400, env.observation_space.shape[0], env.action_space.shape[0], 50,
@@ -80,9 +82,9 @@ def run(experiment,
 
             action = agent.act(observation)
 
-            data.set_action(action.tolist())
-
-            data.set_state(observation.tolist())
+            if save_data:
+                data.set_action(action.tolist())
+                data.set_state(observation.tolist())
 
             prev_observation = observation
             # some environments need the action as scalar valua, and other as array
@@ -92,8 +94,8 @@ def run(experiment,
             # if render:
             #     monitor.add_data(observation, action, reward)
             #     monitor.repaint()
-
-            data.set_reward(reward)
+            if save_data:
+                data.set_reward(reward)
             # if render:
             #     monitor.add_data(observation, action, reward)
 
@@ -123,8 +125,8 @@ def run(experiment,
                                                                                                  reward_sum / (ep + 1)),
                                                                                              agent.get_action_space_size(),
                                                                                              agent.get_action_space_size() / max_actions))
-
-                data.finish_and_store_episode()
+                if save_data:
+                    data.finish_and_store_episode()
 
                 break
 
@@ -139,7 +141,8 @@ def run(experiment,
     print('Run {} episodes in {} seconds and got {} average reward'.format(
         episodes, time / 1000, reward_sum / episodes))
 
-    data.save()
+    if save_data:
+        data.save()
     if save_agent:
         agent.save_agent(force=True, comment=comment)
 
@@ -153,15 +156,6 @@ def training(experiment, reset_after_episodes, max_batches, max_actions, knn=0.1
 
     # start training batches
     for i in range(max_batches):
-        # if i == 0:
-        #     arg_agent_to_load = agent_to_load
-        # else:
-        #     arg_agent_to_load = ['Wolp4', "{}/{}{}".format(comment, 'prev/t', i-1)]
-
-        # if i < max_batches-1:
-        #     arg_comment = "{}/{}{}".format(comment, 'prev/t', i)
-        # else:
-        #     arg_comment = comment
 
         agent = run(experiment=experiment,
                     episodes=reset_after_episodes,
@@ -187,5 +181,14 @@ def training(experiment, reset_after_episodes, max_batches, max_actions, knn=0.1
             shutil.copyfile(jup_template, path_to_dir+'/training.ipynb')
 
 
-if __name__ == '__main__':
-    training("InvertedPendulum-v2", 1000, 1, 1023, comment="test")
+def test_run(experiment, episodes, render=True, save_data=False, max_actions=1000, knn=1):
+
+    run(experiment=experiment,
+        episodes=episodes,
+        max_actions=max_actions,
+        knn=knn,
+        load_agent=False,
+        save_agent=False,
+        save_data=save_data,
+        render=render,
+        comment="test_run")
