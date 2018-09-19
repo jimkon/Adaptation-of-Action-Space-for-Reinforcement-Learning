@@ -26,7 +26,8 @@ def run(experiment,
         training_flag=True,
         id=0,
         comment="default",
-        close_session=True):
+        close_session=True,
+        silent=False):
 
     env = gym.make(experiment)
 
@@ -74,7 +75,9 @@ def run(experiment,
         observation = env.reset()
 
         total_reward = 0
-        print('Episode ', ep, '/', episodes - 1, end='. ')
+        if not silent:
+            print('Episode ', ep, '/', episodes - 1, end='. ')
+
         for t in range(steps):
 
             if render:
@@ -117,14 +120,15 @@ def run(experiment,
                 t += 1
                 reward_sum += total_reward
                 time_passed = timer.get_time()
-                print('Reward:{} Steps:{} t:{} ({}/step) Curr avg={}, {} actions({})'.format(total_reward, t,
-                                                                                             time_passed,
-                                                                                             round(
-                                                                                                 time_passed / t),
-                                                                                             round(
-                                                                                                 reward_sum / (ep + 1)),
-                                                                                             agent.get_action_space_size(),
-                                                                                             agent.get_action_space_size() / max_actions))
+                if not silent:
+                    print('Reward:{} Steps:{} t:{} ({}/step) Curr avg={}, {} actions({})'.format(total_reward, t,
+                                                                                                 time_passed,
+                                                                                                 round(
+                                                                                                     time_passed / t),
+                                                                                                 round(
+                                                                                                     reward_sum / (ep + 1)),
+                                                                                                 agent.get_action_space_size(),
+                                                                                                 agent.get_action_space_size() / max_actions))
                 if save_data:
                     data.finish_and_store_episode()
 
@@ -152,10 +156,11 @@ def run(experiment,
     return agent
 
 
-def training(experiment, reset_after_episodes, max_batches, max_actions, knn=0.1, comment="training", agent_to_load=None, finalize=True):
+def training(experiment, reset_after_episodes, max_batches, max_actions, knn=0.1,
+             comment="training", agent_to_load=None, finalize=True, start_id=0):
 
     # start training batches
-    for i in range(max_batches):
+    for i in range(start_id, start_id+max_batches):
 
         agent = run(experiment=experiment,
                     episodes=reset_after_episodes,
@@ -181,7 +186,7 @@ def training(experiment, reset_after_episodes, max_batches, max_actions, knn=0.1
             shutil.copyfile(jup_template, path_to_dir+'/training.ipynb')
 
 
-def test_run(experiment, episodes, render=True, save_data=False, max_actions=1000, knn=1):
+def test_run(experiment, episodes, render=True, save_data=False, max_actions=1000, knn=1, silent=False):
 
     run(experiment=experiment,
         episodes=episodes,
@@ -191,4 +196,5 @@ def test_run(experiment, episodes, render=True, save_data=False, max_actions=100
         save_agent=False,
         save_data=save_data,
         render=render,
-        comment="test_run")
+        comment="test_run",
+        silent=silent)
