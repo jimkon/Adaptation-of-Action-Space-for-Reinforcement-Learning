@@ -17,9 +17,11 @@ import os
 import random
 import time
 import json
-import run
 import sys
 import tensorflow as tf
+
+from run import *
+
 
 FILE = "D:/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/src/proc.json"
 CPUS = 4
@@ -138,7 +140,7 @@ def caller(proc):
     print("run proc", proc)
     try:
         func, args = proc
-        getattr(sys.modules[__name__], "star_{}".format(func))(args)
+        getattr(sys.modules[__name__], func)(**args)
         return proc, None
     except Exception as e:
         raise(e)
