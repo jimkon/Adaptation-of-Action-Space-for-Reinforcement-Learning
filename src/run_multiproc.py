@@ -17,7 +17,7 @@ import os
 import random
 import time
 import json
-import main
+import run
 import sys
 import tensorflow as tf
 
@@ -48,33 +48,26 @@ def produce(func, args):
     with open(FILE, 'w') as f:
         if file:
             file['queued'].append([func, args])
-
+            print("Adding ", [func, args], "to proc.json")
             json.dump(file, f, indent=2, sort_keys=True)
 
 
 def produce_combos(func, args):
+    from collections import Counter
+    from itertools import product
 
-    episodes = [1000]
-    render = [["a", 'b'], ['c', 'd']]
-    experiment = ['InvertedPendulum-v2', 'InvertedDoublePendulum-v2']
-    max_actions = [1, 2, 3, 4]
-    adapted_action_space = [True]
-    knn = [0.1, 0.2, 0.5]
-
-    args_compinations = itertools.product(
-        episodes, render, experiment, max_actions, adapted_action_space, knn)
-    # print(args_compinations)
-    # for i in list(args_compinations):
-    #     print(i)
-    # exit()
-
-    result = sum(pool.starmap(run, args_compinations))
-
-    pool.close()
-    pool.join()
-    print("total time needed", result)
-
-    run()
+    keys = list(Counter(args).keys())
+    values = list(Counter(args).values())
+    # print(keys)
+    # print(values)
+    combos = product(*values)
+    for c in combos:
+        # print(c)
+        d = dict()
+        for i in range(len(keys)):
+            d[keys[i]] = c[i]
+        # print(d)
+        produce(func=func, args=d)
 
 
 def consume():
@@ -141,16 +134,6 @@ def batch_procs(all_procs):
     return result_procs, all_procs
 
 
-def star_test_run(args):
-    main.test_run(experiment=args['experiment'],
-                  episodes=args['episodes'],
-                  knn=args['knn'],
-                  max_actions=args['max_actions'],
-                  render=args['render'],
-                  save_data=args['save_data'],
-                  silent=args['silent'])
-
-
 def caller(proc):
     print("run proc", proc)
     try:
@@ -158,7 +141,20 @@ def caller(proc):
         getattr(sys.modules[__name__], "star_{}".format(func))(args)
         return proc, None
     except Exception as e:
+        raise(e)
+        exit()
         return proc, str(e)
+
+
+def star_test_run(args):
+    run.test_run(**args)
+    # main.test_run(experiment=args['experiment'],
+    #               episodes=args['episodes'],
+    #               knn=args['knn'],
+    #               max_actions=args['max_actions'],
+    #               render=args['render'],
+    #               save_data=args['save_data'],
+    #               silent=args['silent'])
 
 
 if __name__ == '__main__':
@@ -171,6 +167,8 @@ if __name__ == '__main__':
     total_time = 0
 
     all_procs = consume()
+
+    print("Processes found on proc.json:", len(all_procs))
 
     procs, all_procs = batch_procs(all_procs)
     while(len(procs) > 0):
