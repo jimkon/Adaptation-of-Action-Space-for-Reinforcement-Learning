@@ -1,5 +1,6 @@
-main.py
+
 proc.json
+
 
 # tests
 tests
@@ -11,6 +12,7 @@ test_*.py
 __pycache__
 
 # .py files
+main.py
 clipboard.py
 example.py
 pyflann_timing.py

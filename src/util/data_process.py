@@ -535,7 +535,7 @@ class Data_handler:
 if __name__ == "__main__":
 
     dh = Data_handler(
-        "D:\dip\Adaptation-of-Action-Space-for-Reinforcement-Learning\\results\Wolp5\InvertedPendulum-v2\data\def\data_1000_Wolp4_Inv1000k100#0.json.zip")
+        "D:\dip\Adaptation-of-Action-Space-for-Reinforcement-Learning\\results\Wolp4\InvertedPendulum-v2\data\\training\data_5000_Wolp4_Inv1023k102#0.json.zip")
     # dh = Data_handler('data_10000_Wolp4_Inv1000k51#0.json.zip')
     # dh = Data_handler('data_10000_Wolp4_Inv255k25#0.json.zip')
     # # dh = Data_handler('data_5000_Wolp4_Inv10000k1000#0.json.zip')
