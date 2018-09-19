@@ -24,20 +24,61 @@ import tensorflow as tf
 FILE = "D:/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/src/proc.json"
 CPUS = 4
 
+FILE_TEMPLATE = {
+    "consumed": [],
+    "failed": [],
+    "queued": []
+}
 
-def produce(procs):
+
+def create_file_if_not_exists():
+    if os.path.exists(FILE):
+        return
+    else:
+        with open(FILE, 'w') as f:
+            json.dump(FILE_TEMPLATE, f, indent=2, sort_keys=True)
+
+
+def produce(func, args):
+    create_file_if_not_exists()
     file = None
     with open(FILE, 'r') as f:
         file = json.load(f)
 
     with open(FILE, 'w') as f:
         if file:
-            file['queued'].append(procs)
+            file['queued'].append([func, args])
+
             json.dump(file, f, indent=2, sort_keys=True)
 
 
-def consume():
+def produce_combos(func, args):
 
+    episodes = [1000]
+    render = [["a", 'b'], ['c', 'd']]
+    experiment = ['InvertedPendulum-v2', 'InvertedDoublePendulum-v2']
+    max_actions = [1, 2, 3, 4]
+    adapted_action_space = [True]
+    knn = [0.1, 0.2, 0.5]
+
+    args_compinations = itertools.product(
+        episodes, render, experiment, max_actions, adapted_action_space, knn)
+    # print(args_compinations)
+    # for i in list(args_compinations):
+    #     print(i)
+    # exit()
+
+    result = sum(pool.starmap(run, args_compinations))
+
+    pool.close()
+    pool.join()
+    print("total time needed", result)
+
+    run()
+
+
+def consume():
+    create_file_if_not_exists()
     procs = None
     file = None
     with open(FILE, 'r') as f:
@@ -53,6 +94,7 @@ def consume():
 
 
 def log(procs, failed=False):
+    create_file_if_not_exists()
     if len(procs) == 0:
         return
 
@@ -174,29 +216,3 @@ if __name__ == '__main__':
             all_procs.extend(new_procs)
 
     print("Total time", total_time)
-    # exit()
-
-    # exit()
-    #
-    #
-    # episodes = [1000]
-    # render = [["a", 'b'], ['c', 'd']]
-    # experiment = ['InvertedPendulum-v2', 'InvertedDoublePendulum-v2']
-    # max_actions = [1, 2, 3, 4]
-    # adapted_action_space = [True]
-    # knn = [0.1, 0.2, 0.5]
-    #
-    # args_compinations = itertools.product(
-    #     episodes, render, experiment, max_actions, adapted_action_space, knn)
-    # # print(args_compinations)
-    # # for i in list(args_compinations):
-    # #     print(i)
-    # # exit()
-    #
-    # result = sum(pool.starmap(run, args_compinations))
-
-    # pool.close()
-    # pool.join()
-    # print("total time needed", result)
-
-    # run()
