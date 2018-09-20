@@ -86,14 +86,11 @@ def merge(path_to_dir, zipfiles=True, delete_merged=True):
     print("Merging...")
     prev_i = nums[0]
     result_data = load(path_to_dir+"/"+file_template.format(prev_i))
-    os.remove(path_to_dir+"/"+file_template.format(nums[0]))
 
     for i in nums[1:]:
         file_name = path_to_dir+"/"+file_template.format(i)
         temp_data = load(file_name)
         result_data.merge(temp_data)
-        if delete_merged:
-            os.remove(file_name)
 
         if i-prev_i > 1:
             print("Warning: Not consecutive files: [",
@@ -105,6 +102,13 @@ def merge(path_to_dir, zipfiles=True, delete_merged=True):
     result_data.path = path_to_dir
     result_data.data['experiment']['number_of_episodes'] *= len(nums)
     result_data.save()
+
+    if delete_merged:
+        print("Deleting merged files")
+        for i in nums:
+            os.remove(path_to_dir+"/"+file_template.format(nums[i]))
+
+    print("Successfully merged files in", path_to_dir)
 
 
 class Data:
