@@ -143,8 +143,6 @@ def caller(proc):
         getattr(sys.modules[__name__], func)(**args)
         return proc, None
     except Exception as e:
-        raise(e)
-        exit()
         return proc, str(e)
 
 

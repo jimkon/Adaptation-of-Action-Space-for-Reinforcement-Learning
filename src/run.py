@@ -134,12 +134,6 @@ def run(experiment,
 
                 break
 
-        # temp_buffer.append(total_reward)
-        # temp_buffer.pop(0)
-        # temp_avg = np.average(temp_buffer)
-        # print('temp average = ', temp_avg)
-        # if temp_avg > 750:
-        #     break
     # end of episodes
     time = full_epoch_timer.get_time()
     print('Run {} episodes in {} seconds and got {} average reward'.format(
@@ -161,7 +155,8 @@ def training(experiment,
              max_batches,
              max_actions,
              knn=0.1,
-             comment="training", agent_to_load=None,
+             comment="training",
+             agent_to_load=None,
              finalize=True,
              start_id=0):
 
@@ -175,9 +170,11 @@ def training(experiment,
                     id=i,
                     comment=comment,
                     agent_to_load=agent_to_load,
-                    close_session=False)
+                    close_session=False,
+                    silent=False)
 
-        agent.save_agent(comment="{}/{}{}".format(comment, 'prev/t', i))
+        agent.save_agent(comment="{}/{}/batch{}_{}".format(comment,
+                                                           'prev', reset_after_episodes, i))
         agent.close_session()
 
     if finalize:
@@ -189,6 +186,7 @@ def training(experiment,
 
         jup_template = "{}/jupyter_templates/training.ipynb".format(PROJECT_DIR)
         if os.path.exists(jup_template):
+            print("Adding training notebook")
             shutil.copyfile(jup_template, path_to_dir+'/training.ipynb')
 
 
@@ -197,7 +195,7 @@ def test_run(experiment,
              render=True,
              save_data=False,
              max_actions=1000,
-             knn=1,
+             knn=0.1,
              silent=False):
 
     run(experiment=experiment,
