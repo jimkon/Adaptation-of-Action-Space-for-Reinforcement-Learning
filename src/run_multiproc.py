@@ -146,17 +146,6 @@ def caller(proc):
         return proc, str(e)
 
 
-def star_test_run(args):
-    run.test_run(**args)
-    # main.test_run(experiment=args['experiment'],
-    #               episodes=args['episodes'],
-    #               knn=args['knn'],
-    #               max_actions=args['max_actions'],
-    #               render=args['render'],
-    #               save_data=args['save_data'],
-    #               silent=args['silent'])
-
-
 if __name__ == '__main__':
 
     print("Preload tensorflow")
