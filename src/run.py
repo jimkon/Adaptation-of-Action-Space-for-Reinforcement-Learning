@@ -184,10 +184,15 @@ def training(experiment,
         import os
         import shutil
 
-        jup_template = "{}/jupyter_templates/training.ipynb".format(PROJECT_DIR)
+        jup_file = "training.ipynb"
+        jup_template = "{}/jupyter_templates/{}".format(PROJECT_DIR, jup_file)
+        dest_file = "{}/jupyter_templates/{}".format(path_to_dir, jup_file)
         if os.path.exists(jup_template):
+            if os.path.exists(dest_file):
+                break
+
             print("Adding training notebook")
-            shutil.copyfile(jup_template, path_to_dir+'/training.ipynb')
+            shutil.copyfile(jup_template, dest_file)
 
 
 def gather_results(experiment,
@@ -215,6 +220,19 @@ def gather_results(experiment,
         comment=comment,
         close_session=True,
         silent=silent)
+
+    import os
+    import shutil
+
+    jup_file = "results.ipynb"
+    jup_template = "{}/jupyter_templates/{}".format(PROJECT_DIR, jup_file)
+    dest_file = "{}/jupyter_templates/{}".format(path_to_dir, jup_file)
+    if os.path.exists(jup_template):
+        if os.path.exists(dest_file):
+            break
+
+        print("Adding training notebook")
+        shutil.copyfile(jup_template, dest_file)
 
 
 def test_run(experiment,
