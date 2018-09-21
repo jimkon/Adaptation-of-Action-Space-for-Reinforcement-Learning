@@ -148,11 +148,6 @@ def caller(proc):
 
 if __name__ == '__main__':
 
-    print("Preload tensorflow")
-    pre_load = tf.constant("Preload finished")
-    sess = tf.Session()
-    print(sess.run(pre_load))
-
     total_time = 0
 
     all_procs = consume()
