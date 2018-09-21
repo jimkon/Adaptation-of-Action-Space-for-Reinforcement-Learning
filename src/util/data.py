@@ -19,6 +19,20 @@ def load(file_name):
     return data
 
 
+def deplete(file_name, convert_episode):
+    print("Depleting", file_name)
+    df = load(file_name)
+
+    for episode in df.data["simulation"]["episodes"]:
+        convert_episode(episode)
+
+    result_file = "light_"+file_name[:len(file_name)-4]
+    with open(result_file, 'w', encoding="UTF-8") as f:
+        print('Data: Saving', result_file)
+        json.dump(df.data, f, indent=2)
+    print("Depletion finished")
+
+
 def merge(path_to_dir, zipfiles=True, delete_merged=True):
 
     print("Merging files in ", path_to_dir)
@@ -63,6 +77,10 @@ def merge(path_to_dir, zipfiles=True, delete_merged=True):
     for f in filtered_filenames:
         print("Found:", f)
 
+    if len(filtered_filenames) == 1:
+        print("No 2 files to merge")
+        return
+
     print("Sorting files...")
     if not zipfiles:
         key = "(\d)*"
@@ -83,6 +101,7 @@ def merge(path_to_dir, zipfiles=True, delete_merged=True):
     nums = sorted(nums)
 
     # print("final names")
+
     print("Merging...")
     prev_i = nums[0]
     result_data = load(path_to_dir+"/"+file_template.format(prev_i))
@@ -113,7 +132,7 @@ def merge(path_to_dir, zipfiles=True, delete_merged=True):
 
 class Data:
 
-    AUTOSAVE_BATCH_SIZE = 1e5
+    AUTOSAVE_BATCH_SIZE = 5*1e5
 
     DATA_TEMPLATE = '''
     {
