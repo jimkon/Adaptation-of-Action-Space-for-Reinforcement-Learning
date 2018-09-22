@@ -186,7 +186,7 @@ class Data:
         self.data_added = 0
 
     def __increase_data_counter(self, n=1):
-        if tempsave:
+        if self.tempsave:
             self.data_added += n
         else:
             pass
