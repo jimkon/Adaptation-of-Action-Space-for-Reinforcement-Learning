@@ -10,9 +10,10 @@ import os
 class WolpertingerAgent(agent.DDPGAgent):
 
     def __init__(self, env, result_dir, max_actions=1e5, k_ratio=0.1, training_flag=True,
-                 action_space_config=['auto', 'square', 10000, 10]):
+                 action_space_config=['auto', 'square', 10000, 10], save_action_space=False):
 
         self.action_space_config = action_space_config
+        self.save_action_space = save_action_space
 
         super().__init__(env, result_dir, training_flag=training_flag)
 
@@ -64,12 +65,17 @@ class WolpertingerAgent(agent.DDPGAgent):
             if self.action_space.update():
                 print("Adapting action space")
                 self.update_count += 1
-                # pics_dir = "{}/pics/".format(self.result_dir)
-                # if not os.path.exists(pics_dir):
-                #     os.makedirs(pics_dir, exist_ok=True)
-                # self.action_space.plot_space(
-                #     filename="{}/a{}.png".format(pics_dir, self.update_count))
-                # print('new action space:\n', self.action_space.get_space())
+
+                if self.data_fetch is not None and self.save_action_space:
+                    # print(self.data_fetch.get_file_name(), self.data_fetch.path)
+                    pics_dir = "{}pics/{}/".format(self.data_fetch.path,
+                                                   self.data_fetch.get_file_name())
+                    # print(pics_dir)
+                    if not os.path.exists(pics_dir):
+                        os.makedirs(pics_dir, exist_ok=True)
+                    self.action_space.plot_space(
+                        filename="{}/a{}.png".format(pics_dir, self.update_count))
+                    # print('new action space:\n', self.action_space.get_space())
 
             max_action_space_size = self.action_space.get_current_size()
             if self.data_fetch:

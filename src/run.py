@@ -28,7 +28,8 @@ def run(experiment,
         comment="run",
         close_session=True,
         silent=False,
-        tempsave=True):
+        tempsave=True,
+        save_action_space=False):
 
     env = gym.make(experiment)
 
@@ -39,7 +40,8 @@ def run(experiment,
 
     agent = WolpertingerAgent(env, result_dir, max_actions=max_actions, k_ratio=knn,
                               training_flag=training_flag,
-                              action_space_config=action_space_config)
+                              action_space_config=action_space_config,
+                              save_action_space=save_action_space)
 
     if load_agent:
         if agent_to_load is not None:
@@ -204,14 +206,15 @@ def gather_results(experiment,
                    id=0,
                    comment="results",
                    silent=False,
-                   tempsave=False):
+                   tempsave=False,
+                   save_action_space=False):
 
     run(experiment=experiment,
         episodes=episodes,
         max_actions=max_actions,
         knn=knn,
         action_space_config=action_space_config,
-        render=True,
+        render=False,
         load_agent=True,
         agent_to_load=agent_to_load,
         save_agent=False,
@@ -221,7 +224,8 @@ def gather_results(experiment,
         comment=comment,
         close_session=True,
         silent=silent,
-        tempsave=tempsave)
+        tempsave=tempsave,
+        save_action_space=save_action_space)
 
     import os
     import shutil
