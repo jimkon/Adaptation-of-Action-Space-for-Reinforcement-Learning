@@ -33,6 +33,8 @@ results/*
 !results/jupyter_templates/
 results/jupyter_templates/*
 !results/jupyter_templates/*.ipynb
+results/jupyter_templates/refresh_templates.ipynb
+
 
 data
 
