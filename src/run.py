@@ -27,7 +27,8 @@ def run(experiment,
         id=0,
         comment="run",
         close_session=True,
-        silent=False):
+        silent=False,
+        tempsave=True):
 
     env = gym.make(experiment)
 
@@ -49,7 +50,7 @@ def run(experiment,
     timer = Timer()
 
     if save_data:
-        data = util.data.Data(agent.get_dir(), comment=comment)
+        data = util.data.Data(agent.get_dir(), comment=comment, tempsave=tempsave)
         data.set_agent(agent.get_name(), int(agent.action_space.get_size()),
                        agent.k_nearest_neighbors, agent.get_version())
         data.set_experiment(experiment, agent.low.tolist(), agent.high.tolist(), episodes)
@@ -158,7 +159,8 @@ def training(experiment,
              comment="training",
              agent_to_load=None,
              finalize=True,
-             start_id=0):
+             start_id=0,
+             tempsave=False):
 
     # start training batches
     for i in range(start_id, start_id+max_batches):
@@ -171,7 +173,8 @@ def training(experiment,
                     comment=comment,
                     agent_to_load=agent_to_load,
                     close_session=False,
-                    silent=False)
+                    silent=False,
+                    tempsave=tempsave)
 
         agent.save_agent(comment="{}/{}/batch{}_{}".format(comment,
                                                            'prev', reset_after_episodes, i))
@@ -186,7 +189,7 @@ def training(experiment,
 
         jup_file = "training.ipynb"
         jup_template = "{}/jupyter_templates/{}".format(PROJECT_DIR, jup_file)
-        dest_file = "{}/jupyter_templates/{}".format(path_to_dir, jup_file)
+        dest_file = "{}/".format(path_to_dir)
         if os.path.exists(jup_template) and not os.path.exists(dest_file):
             print("Adding training notebook")
             shutil.copyfile(jup_template, dest_file)
@@ -200,7 +203,8 @@ def gather_results(experiment,
                    agent_to_load=["Wolp4", "training"],
                    id=0,
                    comment="results",
-                   silent=False):
+                   silent=False,
+                   tempsave=False):
 
     run(experiment=experiment,
         episodes=episodes,
@@ -216,7 +220,8 @@ def gather_results(experiment,
         id=id,
         comment=comment,
         close_session=True,
-        silent=silent)
+        silent=silent,
+        tempsave=tempsave)
 
     import os
     import shutil
@@ -237,7 +242,9 @@ def test_run(experiment,
              save_data=False,
              max_actions=1000,
              knn=0.1,
-             silent=False):
+             silent=False,
+             training_flag=True,
+             tempsave=False):
 
     run(experiment=experiment,
         episodes=episodes,
@@ -248,6 +255,7 @@ def test_run(experiment,
         agent_to_load=agent_to_load,
         save_agent=False,
         save_data=save_data,
-        training_flag=True,
+        training_flag=training_flag,
         comment="test_run",
-        silent=silent)
+        silent=silent,
+        tempsave=tempsave)

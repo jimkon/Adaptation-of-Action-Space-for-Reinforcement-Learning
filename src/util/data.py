@@ -132,7 +132,7 @@ def merge(path_to_dir, zipfiles=True, delete_merged=True):
 
 class Data:
 
-    AUTOSAVE_BATCH_SIZE = 5*1e5
+    AUTOSAVE_BATCH_SIZE = 1e6
 
     DATA_TEMPLATE = '''
     {
@@ -168,10 +168,11 @@ class Data:
     }
     '''
 
-    def __init__(self, path, comment=""):
+    def __init__(self, path, comment="", tempsave=True):
 
         self.path = path
         self.comment = comment
+        self.tempsave = tempsave
 
         if path:
             self.path = "{}/data/{}/".format(self.path, comment)
@@ -185,7 +186,10 @@ class Data:
         self.data_added = 0
 
     def __increase_data_counter(self, n=1):
-        self.data_added += n
+        if tempsave:
+            self.data_added += n
+        else:
+            pass
 
     def set_id(self, n):
         self.data['id'] = n
