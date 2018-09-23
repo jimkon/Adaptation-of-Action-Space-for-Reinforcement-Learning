@@ -231,6 +231,9 @@ class Data:
         self.episode['action_space_sizes'].append(max_size)
         self.__increase_data_counter()
 
+    def get_episode_id(self):
+        return self.episode['id']
+
     def end_of_episode(self):
         self.data['simulation']['episodes'].append(self.episode)
         self.episode = json.loads(self.EPISODE_TEMPLATE)

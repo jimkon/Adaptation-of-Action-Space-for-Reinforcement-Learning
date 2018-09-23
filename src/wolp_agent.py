@@ -74,7 +74,7 @@ class WolpertingerAgent(agent.DDPGAgent):
                     if not os.path.exists(pics_dir):
                         os.makedirs(pics_dir, exist_ok=True)
                     self.action_space.plot_space(
-                        filename="{}/a{}.png".format(pics_dir, self.update_count))
+                        filename="{}/a{}.png".format(pics_dir, self.data_fetch.get_episode_id()))
                     # print('new action space:\n', self.action_space.get_space())
 
             max_action_space_size = self.action_space.get_current_size()
