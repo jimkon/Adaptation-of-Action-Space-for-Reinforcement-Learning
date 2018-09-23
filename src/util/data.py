@@ -19,14 +19,18 @@ def load(file_name):
     return data
 
 
-def deplete(file_name, convert_episode):
+def deplete(file_name, convert_episode, directory=None):
     print("Depleting", file_name)
-    df = load(file_name)
+    if directory is None:
+        directory = ""
+    else:
+        directory = directory+"/"
+    df = load(directory+file_name)
 
     for episode in df.data["simulation"]["episodes"]:
         convert_episode(episode)
 
-    result_file = "light_"+file_name[:len(file_name)-4]
+    result_file = directory+"light_"+file_name[:len(file_name)-4]
     with open(result_file, 'w', encoding="UTF-8") as f:
         print('Data: Saving', result_file)
         json.dump(df.data, f, indent=2)
@@ -226,9 +230,10 @@ class Data:
         self.episode['rewards'].append(reward)
         self.__increase_data_counter()
 
-    def set_action_space_size(self, min_size, max_size):
+    def set_action_space_size(self, min_size, max_size, changed):
         self.episode['action_space_sizes'].append(min_size)
         self.episode['action_space_sizes'].append(max_size)
+        self.episode['action_space_sizes'].append(changed)
         self.__increase_data_counter()
 
     def get_episode_id(self):

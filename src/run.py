@@ -186,15 +186,15 @@ def training(experiment,
         path_to_dir = "{}/data/{}/".format(agent.get_dir(), comment)
         util.data.merge(path_to_dir)
 
-        import os
-        import shutil
-
-        jup_file = "training.ipynb"
-        jup_template = "{}/jupyter_templates/{}".format(PROJECT_DIR, jup_file)
-        dest_file = "{}/".format(path_to_dir)
-        if os.path.exists(jup_template) and not os.path.exists(dest_file):
-            print("Adding training notebook")
-            shutil.copyfile(jup_template, dest_file)
+        # import os
+        # import shutil
+        #
+        # jup_file = "training.ipynb"
+        # jup_template = "{}/jupyter_templates/{}".format(PROJECT_DIR, jup_file)
+        # dest_file = "{}/".format(path_to_dir)
+        # if os.path.exists(jup_template) and not os.path.exists(dest_file):
+        #     print("Adding training notebook")
+        #     shutil.copyfile(jup_template, dest_file)
 
 
 def gather_results(experiment,
@@ -209,6 +209,8 @@ def gather_results(experiment,
                    tempsave=False,
                    save_action_space=False):
 
+    t_comment = "{}/{}/{}".format(comment, action_space_config[0], action_space_config[1])
+
     run(experiment=experiment,
         episodes=episodes,
         max_actions=max_actions,
@@ -221,21 +223,23 @@ def gather_results(experiment,
         save_data=True,
         training_flag=False,
         id=id,
-        comment=comment,
+        comment=t_comment,
         close_session=True,
         silent=silent,
         tempsave=tempsave,
         save_action_space=save_action_space)
 
-    import os
-    import shutil
-
-    jup_file = "results.ipynb"
-    jup_template = "{}/jupyter_templates/{}".format(PROJECT_DIR, jup_file)
-    dest_file = "{}/jupyter_templates/{}".format(path_to_dir, jup_file)
-    if os.path.exists(jup_template) and not os.path.exists(dest_file):
-        print("Adding training notebook")
-        shutil.copyfile(jup_template, dest_file)
+    # import os
+    # import shutil
+    #
+    # path_to_dir = "{}/data/{}/".format(agent.get_dir(), comment)
+    #
+    # jup_file = "results.ipynb"
+    # jup_template = "{}/jupyter_templates/{}".format(PROJECT_DIR, jup_file)
+    # dest_file = "{}/".format(path_to_dir)
+    # if os.path.exists(jup_template) and not os.path.exists(dest_file):
+    #     print("Adding results notebook")
+    #     shutil.copyfile(jup_template, dest_file)
 
 
 def test_run(experiment,
