@@ -319,7 +319,7 @@ class Data:
 
         final_file_name = "{}/{}{}.json".format(directory, prefix, self.get_file_name())
         if final_save:
-            print('Data: Ziping', final_file_name)
+            print('Data: Ziping', final_file_name, end='')
             if os.path.exists(final_file_name + '.zip'):
                 final_file_name = "_DUPLICATE_"+final_file_name
             with zipfile.ZipFile(final_file_name + '.zip', mode='w', compression=zipfile.ZIP_DEFLATED) as myzip:
@@ -327,8 +327,10 @@ class Data:
                     self.data, indent=2, sort_keys=True))
         else:
             with open(final_file_name, 'w', encoding="UTF-8") as f:
-                print('Data: Saving', final_file_name)
+                print('Data: Saving', final_file_name, end='')
                 json.dump(self.data, f)
+
+        print(" Done!")
 
     def temp_save(self):
         if self.data_added == 0:

@@ -149,7 +149,7 @@ def run(experiment,
 
     if close_session:
         agent.close_session()
-
+    print("END")
     return agent
 
 

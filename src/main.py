@@ -10,12 +10,12 @@ import pickle
 
 
 if __name__ == '__main__':
-    gather_results("InvertedPendulum-v2",
-                   1000,
-                   63,
-                   0.1,
-                   action_space_config=['auto', 'square', 10000, -1],
-                   save_action_space=True)
+    # gather_results("InvertedPendulum-v2",
+    #                2000,
+    #                63,
+    #                0.5,
+    #                action_space_config=['auto', 'square', 20000, -1],
+    #                save_action_space=True)
     #
     # test_run("HalfCheetah-v2",
     #          10,
@@ -30,12 +30,11 @@ if __name__ == '__main__':
     #          max_actions=16513,
     #          knn=0.1,
     #          start_id=100)
-    # produce_combos(func="gather_results",
-    #                args={
-    #                    "experiment": ["InvertedPendulum-v2"],
-    #                    "episodes": [100, 150, 200],
-    #                    "render": [False],
-    #                    "save_data": [False],
-    #                    "max_actions": [1000],
-    #                    "knn": [0.1],
-    #                    "silent": [True]})
+    produce_combos(func="gather_results",
+                   args={
+                       "experiment": ["InvertedPendulum-v2"],
+                       "episodes": [2000],
+                       "max_actions": [7, 15, 31, 63, 127, 255, 511],
+                       "knn": [.1, .2, .3, .4, .5, 1],
+                       "save_action_space": [True],
+                       "silent": [True]})

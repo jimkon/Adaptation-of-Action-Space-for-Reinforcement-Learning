@@ -147,6 +147,7 @@ def caller(proc):
         getattr(sys.modules[__name__], func)(**args)
         return proc, None
     except Exception as e:
+        print(e)
         return proc, str(e)
 
 
@@ -158,7 +159,11 @@ if __name__ == '__main__':
 
     print("Processes found on proc.json:", len(all_procs))
 
-    procs, all_procs = batch_procs(all_procs)
+    # procs, all_procs = batch_procs(all_procs)
+
+    pool = Pool(processes=CPUS)
+    procs = all_procs
+
     while(len(procs) > 0):
         print("processes:", len(procs), "left:", len(all_procs))
         # for p in procs:
@@ -171,12 +176,14 @@ if __name__ == '__main__':
         # print("mapping", func, "("+str(len(procs))+") with args", args)
 
         ps = (p for p in procs)
-        pool = Pool(processes=CPUS)
 
-        results = pool.map(caller, ps)
+        results = pool.map(caller, ps, CPUS)
 
         pool.close()
+        print("NOT join")
+
         pool.join()
+        print("join")
         #
         map_time = time.time()-start_time
         total_time += map_time
@@ -195,10 +202,12 @@ if __name__ == '__main__':
         log(succeed)
         log(failed, failed=True)
 
-        procs, all_procs = batch_procs(all_procs)
+        procs = consume()
 
-        new_procs = consume()
-        if len(new_procs) > 0:
-            all_procs.extend(new_procs)
+        # procs, all_procs = batch_procs(all_procs)
+
+        # new_procs = consume()
+        # if len(new_procs) > 0:
+        #     all_procs.extend(new_procs)
 
     print("Total time", total_time)
