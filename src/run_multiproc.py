@@ -63,6 +63,7 @@ def produce_combos(func, args):
     # print(keys)
     # print(values)
     combos = product(*values)
+    count = 0
     for c in combos:
         # print(c)
         d = dict()
@@ -70,6 +71,9 @@ def produce_combos(func, args):
             d[keys[i]] = c[i]
         # print(d)
         produce(func=func, args=d)
+        count += 1
+
+    print("Added", count, "processes in queue")
 
 
 def consume():

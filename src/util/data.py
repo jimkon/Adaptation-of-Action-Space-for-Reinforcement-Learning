@@ -320,6 +320,8 @@ class Data:
         final_file_name = "{}/{}{}.json".format(directory, prefix, self.get_file_name())
         if final_save:
             print('Data: Ziping', final_file_name)
+            if os.path.exists(final_file_name + '.zip'):
+                final_file_name = "_DUPLICATE_"+final_file_name
             with zipfile.ZipFile(final_file_name + '.zip', mode='w', compression=zipfile.ZIP_DEFLATED) as myzip:
                 myzip.writestr(basename(final_file_name), json.dumps(
                     self.data, indent=2, sort_keys=True))
