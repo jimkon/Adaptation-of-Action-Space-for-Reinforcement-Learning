@@ -24,7 +24,7 @@ from run import *
 
 
 FILE = "D:/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/src/proc.json"
-CPUS = 4
+CPUS = 2
 
 FILE_TEMPLATE = {
     "consumed": [],
@@ -164,50 +164,36 @@ if __name__ == '__main__':
     pool = Pool(processes=CPUS)
     procs = all_procs
 
-    while(len(procs) > 0):
-        print("processes:", len(procs), "left:", len(all_procs))
-        # for p in procs:
-        #     print(p)
+    print("processes:", len(procs), "left:", len(all_procs))
+    # for p in procs:
+    #     print(p)
 
-        start_time = time.time()
+    start_time = time.time()
 
-        # func = procs[0][0]
-        # args = (p[1] for p in procs)
-        # print("mapping", func, "("+str(len(procs))+") with args", args)
+    # func = procs[0][0]
+    # args = (p[1] for p in procs)
+    # print("mapping", func, "("+str(len(procs))+") with args", args)
 
-        ps = (p for p in procs)
+    ps = (p for p in procs)
 
-        results = pool.map(caller, ps, CPUS)
+    results = pool.map(caller, ps, CPUS)
 
-        pool.close()
-        print("NOT join")
+    #
+    map_time = time.time()-start_time
+    total_time += map_time
+    print("elapsed time, map", map_time, "for processes", len(procs))
 
-        pool.join()
-        print("join")
-        #
-        map_time = time.time()-start_time
-        total_time += map_time
-        print("elapsed time, map", map_time, "for processes", len(procs))
+    succeed = []
+    failed = []
+    # print(results)
+    for proc, fail_message in results:
+        if fail_message:
+            proc.append(json.dumps(fail_message))
+            failed.append(proc)
+        else:
+            succeed.append(proc)
 
-        succeed = []
-        failed = []
-        # print(results)
-        for proc, fail_message in results:
-            if fail_message:
-                proc.append(json.dumps(fail_message))
-                failed.append(proc)
-            else:
-                succeed.append(proc)
-
-        log(succeed)
-        log(failed, failed=True)
-
-        procs = consume()
-
-        # procs, all_procs = batch_procs(all_procs)
-
-        # new_procs = consume()
-        # if len(new_procs) > 0:
-        #     all_procs.extend(new_procs)
+    log(succeed)
+    log(failed, failed=True)
 
     print("Total time", total_time)
