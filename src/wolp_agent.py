@@ -5,6 +5,9 @@ from ddpg import agent
 import action_space
 
 import os
+import tensorflow as tf
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 
 class WolpertingerAgent(agent.DDPGAgent):
