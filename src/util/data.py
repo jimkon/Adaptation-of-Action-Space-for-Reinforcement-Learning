@@ -129,7 +129,7 @@ def merge(path_to_dir, zipfiles=True, delete_merged=True):
     if delete_merged:
         print("Deleting merged files")
         for i in nums:
-            os.remove(path_to_dir+"/"+file_template.format(nums[i]))
+            os.remove(path_to_dir+"/"+file_template.format(i))
 
     print("Successfully merged files in", path_to_dir)
 
