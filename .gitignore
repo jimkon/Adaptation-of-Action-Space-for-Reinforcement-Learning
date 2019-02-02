@@ -21,6 +21,8 @@ show_results_temp.py
 action_space_old.py
 la_actor_tester.py
 bin_exp_test.py
+run.py
+run_multiproc.py
 
 /src/ddpg/CartPole-v0
 

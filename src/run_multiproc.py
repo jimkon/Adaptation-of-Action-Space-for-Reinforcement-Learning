@@ -24,7 +24,7 @@ from run import *
 
 
 FILE = "D:/dip/Adaptation-of-Action-Space-for-Reinforcement-Learning/src/proc.json"
-CPUS = 2
+CPUS = 3
 
 FILE_TEMPLATE = {
     "consumed": [],
@@ -63,15 +63,19 @@ def produce_combos(func, args):
     # print(keys)
     # print(values)
     combos = product(*values)
+    dicts = []
     count = 0
     for c in combos:
         # print(c)
         d = dict()
         for i in range(len(keys)):
             d[keys[i]] = c[i]
-        # print(d)
-        produce(func=func, args=d)
         count += 1
+        dicts.append(d)
+        # print(d)
+
+    for d in dicts:
+        produce(func=func, args=d)
 
     print("Added", count, "processes in queue")
 

@@ -42,13 +42,11 @@ def run(experiment,
                               training_flag=training_flag,
                               action_space_config=action_space_config,
                               save_action_space=save_action_space)
-
     if load_agent:
         if agent_to_load is not None:
             agent.load_agent(agent_name=agent_to_load[0], comment=agent_to_load[1])
         else:
             agent.load_agent(comment=comment)
-
     timer = Timer()
 
     if save_data:
@@ -201,8 +199,9 @@ def gather_results(experiment,
                    episodes,
                    max_actions,
                    knn=.1,
-                   action_space_config=['auto', 'square', 30000, 10],
-                   agent_to_load=["Wolp4", "training"],
+                   # action_space_config=['off', 'square', 20000, 10],
+                   action_space_config=['auto', 'square', 20000, 10],
+                   agent_to_load=["Wolp4", "training-1d"],
                    id=0,
                    comment="results",
                    silent=False,
@@ -210,7 +209,6 @@ def gather_results(experiment,
                    save_action_space=False):
 
     t_comment = "{}/{}/{}".format(comment, action_space_config[0], action_space_config[1])
-
     run(experiment=experiment,
         episodes=episodes,
         max_actions=max_actions,
@@ -252,6 +250,7 @@ def test_run(experiment,
              knn=0.1,
              silent=False,
              training_flag=True,
+             action_space_config=['auto', 'square', 20000, 10],
              tempsave=False):
 
     run(experiment=experiment,
@@ -266,4 +265,5 @@ def test_run(experiment,
         training_flag=training_flag,
         comment="test_run",
         silent=silent,
-        tempsave=tempsave)
+        tempsave=tempsave,
+        action_space_config=action_space_config,)
