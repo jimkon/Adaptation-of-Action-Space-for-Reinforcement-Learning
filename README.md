@@ -1,8 +1,22 @@
 # Dependecies
-.  numpy
-.  pyflann
-.  gym
-.  tensorflow
+*  numpy
+*  pyflann
+*  gym
+*  tensorflow
 
-# Diploma Thesis
-[PDF](http://purl.tuc.gr/dl/dias/33218A13-C811-425E-BC8B-8D5226842B6)
+#
+
+# References
+My [Diploma Thesis PDF](http://purl.tuc.gr/dl/dias/33218A13-C811-425E-BC8B-8D5226842B6F)
+
+Based on [paper](https://arxiv.org/abs/1512.07679)
+
+# Code References
+*  [Deep Reinforcement Learning in Large Discrete Action Spaces](https://github.com/jimkon/Deep-Reinforcement-Learning-in-Large-Discrete-Action-Spaces)
+
+*  [Adaptive Discretization](https://github.com/jimkon/adaptive-discretization)
+
+*  [Deep Deterministic Policy Gradient](https://github.com/stevenpjg/ddpg-aigym)
+
+
+
