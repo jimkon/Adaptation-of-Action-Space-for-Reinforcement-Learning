@@ -9,7 +9,7 @@ Based on [paper](https://arxiv.org/abs/1512.07679)
 
 *  [Adaptive Discretization](https://github.com/jimkon/adaptive-discretization)
 
-*  [Deep Deterministic Policy Gradient](https://github.com/stevenpjg/ddpg-aigym)
+*  [Deep Deterministic Policy Gradient](https://github.com/stevenpjg/ddpg-aigym) ([stevenpjg's implementation](https://github.com/stevenpjg))
 
 # Dependecies (pip packages)
 *  numpy
