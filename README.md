@@ -1,4 +1,4 @@
-# Dependecies
+# Dependecies (pip packages)
 *  numpy
 *  pyflann
 *  gym
@@ -11,7 +11,7 @@ My [Diploma Thesis PDF](http://purl.tuc.gr/dl/dias/33218A13-C811-425E-BC8B-8D522
 
 Based on [paper](https://arxiv.org/abs/1512.07679)
 
-# Code References
+# Code implementations
 *  [Deep Reinforcement Learning in Large Discrete Action Spaces](https://github.com/jimkon/Deep-Reinforcement-Learning-in-Large-Discrete-Action-Spaces)
 
 *  [Adaptive Discretization](https://github.com/jimkon/adaptive-discretization)
