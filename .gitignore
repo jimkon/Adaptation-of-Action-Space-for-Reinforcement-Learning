@@ -1,43 +1,4 @@
-
-proc.json
-
-
-# tests
-tests
-plots
-test_*.py
 .cache
 
-# build dirs
-__pycache__
-
-# .py files
-main.py
-clipboard.py
-example.py
-pyflann_timing.py
-action_space_run_simulation.py
-show_results_temp.py
-action_space_old.py
-la_actor_tester.py
-bin_exp_test.py
-run.py
-run_multiproc.py
-
-/src/ddpg/CartPole-v0
-
-# .pyc files
 *.pyc
-
-
-# results
-results/*
-!results/jupyter_templates/
-results/jupyter_templates/*
-!results/jupyter_templates/training.ipynb
-!results/jupyter_templates/results.ipynb
-
-
-data
-
-stable_distribution_list.py
+__pycache__
