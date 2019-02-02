@@ -21,10 +21,9 @@ import os
 
 class Agent:
 
-    def __init__(self, env, result_dir):
+    def __init__(self, env):
 
         self.env = env
-        self.result_dir = result_dir
         # checking state space
         if isinstance(env.observation_space, Box):
             self.observation_space_size = env.observation_space.shape[0]
@@ -42,9 +41,6 @@ class Agent:
             self.continious_action_space = False
             self.low = np.array([0])
             self.high = np.array([env.action_space.n])
-
-        if not os.path.exists(self.get_dir()):
-            os.makedirs(self.get_dir(), exist_ok=True)
 
     def act(self, state):
         pass
@@ -70,9 +66,6 @@ class Agent:
         res.shape = (number_of_elements, size_of_element)
         return res
 
-    def get_dir(self):
-        return "{}/{}/{}".format(self.result_dir, self.get_name(), self.env.spec.id)
-
 
 class DDPGAgent(Agent):
     ''' stevenpjg's implementation of DDPG algorithm '''
@@ -81,9 +74,9 @@ class DDPGAgent(Agent):
     BATCH_SIZE = 64
     GAMMA = 0.99
 
-    def __init__(self, env, dir, is_batch_norm=False, is_grad_inverter=True,
+    def __init__(self, env, is_batch_norm=False, is_grad_inverter=True,
                  training_flag=True):
-        super().__init__(env, dir)
+        super().__init__(env)
         assert isinstance(env.action_space, Box), "action space must be continuous"
 
         if is_batch_norm:
@@ -111,18 +104,12 @@ class DDPGAgent(Agent):
 
         self.data_fetch = None
 
-    def add_data_fetch(self, df):
-        self.data_fetch = df
-
     def get_short_name(self):
         return 'DDPG'
 
     def act(self, state):
         state = self._np_shaping(state, True)
         result = self.actor_net.evaluate_actor(state).astype(float)
-
-        if self.data_fetch:
-            self.data_fetch.set_actors_action(result[0].tolist())
 
         return result
 
@@ -204,34 +191,6 @@ class DDPGAgent(Agent):
         # Update target Critic and actor network
         self.critic_net.update_target_critic()
         self.actor_net.update_target_actor()
-
-    def save_agent(self, force=False, comment="default"):
-        path = "{}/weights/{}".format(self.get_dir(), comment)
-        if not os.path.exists(path):
-            os.makedirs(path, exist_ok=True)
-            print("Saving agent in", path)
-            self.actor_net.save_model(path + '/actor.ckpt')
-            self.critic_net.save_model(path + '/critic.ckpt')
-        else:
-            if force:
-                print("Overwrite old agent in", path)
-                self.actor_net.save_model(path + '/actor.ckpt')
-                self.critic_net.save_model(path + '/critic.ckpt')
-            else:
-                print("Save aborted. An agent is already saved in ", path)
-
-    def load_agent(self, agent_name=None, comment="default"):
-        if agent_name is None:
-            path = "{}/weights/{}".format(self.get_dir(), comment)
-        else:
-            path = "{}/{}/{}/weights/{}".format(self.result_dir,
-                                                agent_name, self.env.spec.id, comment)
-        if os.path.exists(path):
-            print("Loading agent saved in", path)
-            self.actor_net.load_model(path + '/actor.ckpt')
-            self.critic_net.load_model(path + '/critic.ckpt')
-        else:
-            print("Agent not found in", path)
 
     def close_session(self):
         self.actor_net.close()
