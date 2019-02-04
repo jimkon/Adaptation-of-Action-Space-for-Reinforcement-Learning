@@ -1,4 +1,4 @@
-## Adaptation of Action Space for Reinforcement Learning
+# Adaptation of Action Space for Reinforcement Learning
 
 
 # References
